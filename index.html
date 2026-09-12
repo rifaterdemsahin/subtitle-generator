@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SubWebM Alpha | Transparent Subtitle Generator for Canva</title>
+  <title>SubWebM Alpha | Transparent Subtitle Video Generator for Canva</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts for subtitle rendering -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,10 +11,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;600;800;900&family=Montserrat:wght@700;800;900&family=Oswald:wght@700&family=Poppins:wght@700;900&family=Roboto:wght@700;900&family=Rubik:wght@800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
-  <!-- Encoders for True Alpha Export -->
+  <!-- Video Encoders for True Alpha Video Export -->
   <script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.2/build/webm-muxer.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
 
   <link rel="stylesheet" href="style.css">
 </head>
@@ -34,18 +33,18 @@
             <h1 class="font-bold text-lg leading-none bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
               SubWebM Alpha
             </h1>
-            <p class="text-xs text-indigo-400 font-medium mt-0.5">Transparent Subtitle Generator for Canva</p>
+            <p class="text-xs text-indigo-400 font-medium mt-0.5">Transparent Subtitle Video Generator for Canva</p>
           </div>
         </a>
 
         <!-- Shared Menu -->
         <nav class="hidden md:flex items-center space-x-1 pl-4 border-l border-slate-800 text-sm">
           <a href="index.html" class="px-3 py-1.5 rounded-lg bg-indigo-600/20 text-indigo-300 font-semibold border border-indigo-500/30 transition flex items-center gap-1.5">
-            <i class="fa-solid fa-wand-magic-sparkles text-xs"></i> Generator Studio
+            <i class="fa-solid fa-wand-magic-sparkles text-xs"></i> Video Studio
           </a>
           <a href="updates.html" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition flex items-center gap-1.5">
             <i class="fa-solid fa-clock-rotate-left text-xs"></i> Updates & Fixes
-            <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-emerald-500/30 text-emerald-300 font-bold ml-1">v2.0</span>
+            <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-emerald-500/30 text-emerald-300 font-bold ml-1">v2.1</span>
           </a>
         </nav>
       </div>
@@ -53,14 +52,14 @@
       <!-- Header Action Controls -->
       <div class="flex items-center space-x-3">
         <button id="quickHelpBtn" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-medium text-slate-300 transition flex items-center gap-1.5">
-          <i class="fa-brands fa-canva text-cyan-400"></i> Canva Guide
+          <i class="fa-brands fa-canva text-cyan-400"></i> Canva Video Guide
         </button>
         <a href="https://github.com/rifaterdemsahin/subtitle-generator" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-medium text-slate-300 transition flex items-center gap-1.5">
           <i class="fa-brands fa-github text-slate-300"></i> GitHub
         </a>
         <button id="exportWebmBtn" class="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 transition duration-200 flex items-center gap-2">
-          <i class="fa-solid fa-download"></i>
-          <span>Export Transparent</span>
+          <i class="fa-solid fa-video"></i>
+          <span>Export Transparent Video</span>
         </button>
       </div>
     </div>
@@ -71,31 +70,31 @@
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
       <div class="flex justify-between items-center">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i class="fa-brands fa-canva text-cyan-400 text-xl"></i> How to use in Canva (Zero Quality Loss)
+          <i class="fa-brands fa-canva text-cyan-400 text-xl"></i> Transparent Video in Canva
         </h3>
         <button id="closeModalBtn" class="text-slate-400 hover:text-white text-lg">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
       <div class="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-xs text-emerald-300">
-        <i class="fa-solid fa-circle-check"></i> <strong>v2.0 Update:</strong> You no longer need to use Canva's background remover! The downloaded file is 100% transparent.
+        <i class="fa-solid fa-circle-check"></i> <strong>True Video Export:</strong> Exports a genuine <strong>.webm</strong> or <strong>.mov</strong> video file with a transparent alpha channel. In Canva, it imports directly into the <strong>Videos</strong> tab with a full video timeline!
       </div>
       <ol class="space-y-3 text-sm text-slate-300">
         <li class="flex items-start gap-3">
           <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">1</span>
-          <span>Select <strong>Lossless APNG (Canva Recommended)</strong> or <strong>WebM VP9 Alpha</strong> in the Export Format selector below.</span>
+          <span>Select <strong>Transparent WebM Video (.webm)</strong> or <strong>QuickTime Alpha Video (.mov)</strong>.</span>
         </li>
         <li class="flex items-start gap-3">
           <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">2</span>
-          <span>Click <strong>Export Transparent</strong> to download your file.</span>
+          <span>Click <strong>Export Transparent Video</strong> to download.</span>
         </li>
         <li class="flex items-start gap-3">
           <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">3</span>
-          <span>In Canva, go to <strong>Uploads</strong> &rarr; drag your file onto the canvas. It will layer over your footage with razor-sharp transparency!</span>
+          <span>In Canva, go to <strong>Uploads &rarr; Videos</strong> and drag in your video. Place it over any footage on your timeline!</span>
         </li>
       </ol>
       <div class="pt-2 flex justify-between items-center">
-        <a href="updates.html" class="text-xs text-indigo-400 hover:underline">Read full update breakdown &rarr;</a>
+        <a href="updates.html" class="text-xs text-indigo-400 hover:underline">Read technical updates &rarr;</a>
         <button id="gotItBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium">Got it!</button>
       </div>
     </div>
@@ -110,7 +109,7 @@
       <!-- Presets Card -->
       <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl">
         <h2 class="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-wand-magic-sparkles text-pink-400"></i> Style Presets
+          <i class="fa-solid fa-wand-magic-sparkles text-pink-400"></i> Video Style Presets
         </h2>
         <div class="grid grid-cols-2 gap-2">
           <button class="preset-btn p-2.5 rounded-xl border border-slate-700/70 bg-slate-800/60 hover:bg-indigo-600/30 hover:border-indigo-500 text-left transition" data-preset="mrbeast">
@@ -191,21 +190,21 @@
 
       </div>
 
-      <!-- Export Format Hub -->
+      <!-- Export Video Format Hub -->
       <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
         <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
-          <i class="fa-solid fa-file-export text-emerald-400"></i> Export Engine & Format
+          <i class="fa-solid fa-file-video text-purple-400"></i> Video Export Format
         </h2>
         
         <div class="space-y-2 text-xs">
-          <label class="block text-slate-300 font-medium">Choose Canva-Ready Format:</label>
+          <label class="block text-slate-300 font-medium">Choose Video Container:</label>
           <select id="exportFormatSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-indigo-500 font-medium">
-            <option value="apng" selected>⭐ Lossless APNG (Canva Recommended - 100% Crisp Alpha)</option>
-            <option value="webm_vp9">🎥 WebM VP9 Alpha (Matroska AlphaMode=1)</option>
-            <option value="green_screen">🟩 Green Screen Chroma Key (#00FF00 WebM/MP4)</option>
+            <option value="webm_vp9" selected>🎬 Transparent WebM Video (.webm - VP9 Alpha)</option>
+            <option value="mov_alpha">🎥 Transparent QuickTime Video (.mov - 32-bit Alpha)</option>
+            <option value="green_screen">🟩 Green Screen Video (.webm / .mp4 - #00FF00)</option>
           </select>
-          <p id="formatDesc" class="text-[11px] text-emerald-400 leading-relaxed">
-            Lossless 24-bit + 8-bit Alpha animation. Canva imports this with zero blur, zero compression artifacts, and native transparency!
+          <p id="formatDesc" class="text-[11px] text-purple-400 leading-relaxed">
+            Exports a genuine video file (.webm) with Matroska AlphaMode=1 container. Canva natively recognizes this as a video in the Videos tab!
           </p>
         </div>
       </div>
@@ -220,7 +219,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <h2 class="text-sm font-semibold text-slate-200">Canvas Live Preview</h2>
+            <h2 class="text-sm font-semibold text-slate-200">Video Canvas Live Preview</h2>
             <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">100% Alpha Transparent</span>
           </div>
 
@@ -270,14 +269,14 @@
         <div id="exportProgressContainer" class="p-4 bg-indigo-950/40 border border-indigo-500/40 rounded-xl space-y-2 hidden">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-indigo-300 flex items-center gap-2">
-              <i class="fa-solid fa-spinner fa-spin"></i> <span id="exportStatusText">Rendering Transparent Animation...</span>
+              <i class="fa-solid fa-spinner fa-spin"></i> <span id="exportStatusText">Rendering Transparent Video...</span>
             </span>
             <span id="exportProgressPct" class="font-mono text-indigo-200 font-bold">0%</span>
           </div>
           <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-indigo-900">
             <div id="exportProgressBar" class="bg-gradient-to-r from-indigo-500 to-pink-500 h-full w-0 transition-all duration-75"></div>
           </div>
-          <p class="text-[11px] text-slate-400">Capturing raw RGBA frames with pure alpha channel. Ready for Canva drag-and-drop!</p>
+          <p class="text-[11px] text-slate-400">Rendering video frames with full RGBA transparency channel. Ready for Canva video overlay!</p>
         </div>
 
       </div>
@@ -285,14 +284,14 @@
       <!-- Styling & Customization Accordions / Grid -->
       <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-5">
         <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
-          <i class="fa-solid fa-sliders text-purple-400"></i> Subtitle Styling & Layout
+          <i class="fa-solid fa-sliders text-purple-400"></i> Video Subtitle Styling & Layout
         </h3>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
 
           <!-- Aspect Ratio & Resolution -->
           <div class="space-y-1.5">
-            <label class="text-slate-300 font-medium block">Aspect Ratio / Size</label>
+            <label class="text-slate-300 font-medium block">Video Aspect Ratio / Size</label>
             <select id="aspectRatioSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-indigo-500">
               <option value="9:16">9:16 Vertical (1080x1920 - Shorts/Reels)</option>
               <option value="16:9">16:9 Landscape (1920x1080 - YouTube)</option>
@@ -432,7 +431,7 @@
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
       <div>SubWebM Alpha Generator &bull; Designed for Canva, Premiere, Final Cut & DaVinci</div>
       <div class="flex items-center gap-4">
-        <a href="index.html" class="hover:text-indigo-400 transition">Studio</a>
+        <a href="index.html" class="hover:text-indigo-400 transition">Video Studio</a>
         <a href="updates.html" class="hover:text-indigo-400 transition">Updates & Fixes</a>
         <a href="https://github.com/rifaterdemsahin/subtitle-generator" target="_blank" rel="noopener noreferrer" class="hover:text-indigo-400 transition">GitHub</a>
       </div>
