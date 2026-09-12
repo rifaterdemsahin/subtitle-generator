@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subtitle Video Composer | Merge Subtitles with Background Media</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;600;800;900&family=Montserrat:wght@700;800;900&family=Oswald:wght@700&family=Poppins:wght@700;900&family=Roboto:wght@700;900&family=Rubik:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.2/build/webm-muxer.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Shared Header Navigation -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo and Nav Links -->
+      <div class="flex items-center space-x-6">
+        <a href="index.html" class="flex items-center space-x-3 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition">
+            <i class="fa-solid fa-closed-captioning text-white text-xl"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-lg leading-none bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+              SubWebM Alpha
+            </h1>
+            <p class="text-xs text-indigo-400 font-medium mt-0.5">Video & Subtitle Composer</p>
+          </div>
+        </a>
+
+        <!-- Shared Menu -->
+        <nav class="hidden md:flex items-center space-x-1 pl-4 border-l border-slate-800 text-sm">
+          <a href="index.html" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-wand-magic-sparkles text-xs"></i> Transparent Studio
+          </a>
+          <a href="composer.html" class="px-3 py-1.5 rounded-lg bg-indigo-600/20 text-indigo-300 font-semibold border border-indigo-500/30 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-layer-group text-xs text-pink-400"></i> Video Composer
+            <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-pink-500/30 text-pink-300 font-bold ml-1">New</span>
+          </a>
+          <a href="updates.html" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-clock-rotate-left text-xs"></i> Updates
+          </a>
+          <a href="limitations.html" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-triangle-exclamation text-xs text-amber-400"></i> Limitations
+          </a>
+        </nav>
+      </div>
+
+      <!-- Header Action Controls -->
+      <div class="flex items-center space-x-3">
+        <a href="https://github.com/rifaterdemsahin/subtitle-generator" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-medium text-slate-300 transition flex items-center gap-1.5">
+          <i class="fa-brands fa-github text-slate-300"></i> GitHub
+        </a>
+        <button id="exportMergedVideoBtn" class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-emerald-600/30 hover:shadow-emerald-600/50 transition duration-200 flex items-center gap-2">
+          <i class="fa-solid fa-film"></i>
+          <span>Export Merged Video (Lossless)</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Grid -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Left Column: Background & Transcript Controls (5 cols) -->
+    <div class="lg:col-span-5 space-y-6">
+
+      <!-- Background Image & Video Media Card -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+            <i class="fa-solid fa-image text-emerald-400"></i> 1. Background Media
+          </h2>
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">Lossless Merge</span>
+        </div>
+
+        <!-- Background Preset Selection -->
+        <div class="space-y-1.5">
+          <label class="text-slate-300 text-xs font-medium block">Choose Preset Backdrop or Upload:</label>
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            <button class="bg-preset-btn p-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-emerald-500 text-center transition" data-bg="studio">
+              <div class="text-[11px] font-bold text-white">🏢 Studio Room</div>
+            </button>
+            <button class="bg-preset-btn p-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-emerald-500 text-center transition" data-bg="podcast">
+              <div class="text-[11px] font-bold text-white">🎙️ Podcast Lounge</div>
+            </button>
+            <button class="bg-preset-btn p-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-emerald-500 text-center transition" data-bg="cyber">
+              <div class="text-[11px] font-bold text-cyan-400">🌆 Cyber City</div>
+            </button>
+            <button class="bg-preset-btn p-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-emerald-500 text-center transition" data-bg="nature">
+              <div class="text-[11px] font-bold text-emerald-400">🌿 Forest Nature</div>
+            </button>
+            <button class="bg-preset-btn p-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-emerald-500 text-center transition" data-bg="gradient">
+              <div class="text-[11px] font-bold text-purple-400">🌌 Modern Gradient</div>
+            </button>
+            <button class="bg-preset-btn p-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-emerald-500 text-center transition" data-bg="dark">
+              <div class="text-[11px] font-bold text-slate-300">🌑 Dark Minimal</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- File Dropzone for Background Image / Video -->
+        <div id="bgDropZone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-xl p-4 text-center cursor-pointer transition bg-slate-950/50">
+          <input type="file" id="bgFileInput" accept="image/*,video/mp4,video/webm" class="hidden">
+          <i class="fa-solid fa-cloud-arrow-up text-emerald-400 text-xl mb-1"></i>
+          <p class="text-xs text-slate-200 font-medium">Upload custom <strong>Background Image or Video</strong></p>
+          <p class="text-[11px] text-slate-400 mt-0.5">Drag & drop JPG, PNG, WebP or MP4 here</p>
+        </div>
+
+        <!-- Background Adjustments (Dimming & Blur for text pop) -->
+        <div class="p-3.5 bg-slate-950/70 rounded-xl border border-slate-800 space-y-3 text-xs">
+          <div class="font-semibold text-slate-300 flex items-center justify-between">
+            <span>Visual Adjustments (Make Subtitles Pop)</span>
+            <i class="fa-solid fa-sliders text-emerald-400"></i>
+          </div>
+
+          <!-- Dimming / Overlay Darkness -->
+          <div class="space-y-1">
+            <div class="flex justify-between">
+              <label class="text-slate-400">Darkness Overlay</label>
+              <span id="bgDarknessVal" class="text-slate-300 font-mono">35%</span>
+            </div>
+            <input type="range" id="bgDarknessSlider" min="0" max="90" value="35" class="w-full accent-emerald-500">
+          </div>
+
+          <!-- Background Blur -->
+          <div class="space-y-1">
+            <div class="flex justify-between">
+              <label class="text-slate-400">Background Blur (Depth of Field)</label>
+              <span id="bgBlurVal" class="text-slate-300 font-mono">2px</span>
+            </div>
+            <input type="range" id="bgBlurSlider" min="0" max="20" value="2" class="w-full accent-emerald-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Transcript Card -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+            <i class="fa-solid fa-align-left text-indigo-400"></i> 2. Subtitle Transcript
+          </h2>
+          <button id="sampleTranscriptBtn" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 font-medium transition">
+            Load Sample
+          </button>
+        </div>
+
+        <textarea id="composerTranscriptInput" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition resize-y" placeholder="Paste your SRT or plain text transcript here..."></textarea>
+        
+        <div class="text-[11px] text-slate-400 flex items-center justify-between">
+          <span id="composerCueCount">0 cues loaded</span>
+          <span class="text-indigo-400">Word-level karaoke enabled</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Live Composite Preview & Controls (7 cols) -->
+    <div class="lg:col-span-7 space-y-6">
+
+      <!-- Live Canvas Card -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <h2 class="text-sm font-semibold text-white">Composite Live Video Preview</h2>
+          </div>
+          
+          <div class="text-xs text-slate-400">
+            Aspect Ratio: <span class="text-indigo-300 font-semibold">9:16 Vertical (1080x1920)</span>
+          </div>
+        </div>
+
+        <!-- Canvas Viewport -->
+        <div class="relative w-full flex items-center justify-center bg-slate-950 rounded-xl overflow-hidden border border-slate-800 min-h-[380px] max-h-[480px] p-2">
+          <div id="composerViewport" class="relative max-h-[460px] shadow-2xl rounded-lg overflow-hidden flex items-center justify-center aspect-[9/16]">
+            <canvas id="composerCanvas" width="1080" height="1920" class="w-full h-full object-contain block"></canvas>
+          </div>
+        </div>
+
+        <!-- Player Controls & Scrubber -->
+        <div class="space-y-2 bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+          <div class="flex items-center gap-3">
+            <button id="composerPlayBtn" class="w-9 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition shadow">
+              <i class="fa-solid fa-play text-xs"></i>
+            </button>
+            <button id="composerStopBtn" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">
+              <i class="fa-solid fa-stop text-xs"></i>
+            </button>
+            <div class="flex-1 flex items-center gap-2">
+              <input type="range" id="composerTimeScrubber" min="0" max="10" step="0.01" value="0" class="w-full accent-emerald-500 cursor-pointer h-2 bg-slate-800 rounded-lg">
+            </div>
+            <div class="text-xs font-mono text-slate-300 min-w-[90px] text-right">
+              <span id="composerCurrentTimeLabel">00:00.0</span> / <span id="composerTotalTimeLabel">00:00.0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Progress Container -->
+        <div id="composerProgressContainer" class="p-4 bg-emerald-950/40 border border-emerald-500/40 rounded-xl space-y-2 hidden">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-emerald-300 flex items-center gap-2">
+              <i class="fa-solid fa-spinner fa-spin"></i> Rendering Merged Lossless Video...
+            </span>
+            <span id="composerProgressPct" class="font-mono text-emerald-200 font-bold">0%</span>
+          </div>
+          <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-emerald-900">
+            <div id="composerProgressBar" class="bg-gradient-to-r from-emerald-500 to-indigo-500 h-full w-0 transition-all duration-75"></div>
+          </div>
+          <p class="text-[11px] text-slate-400">Merging background image and text frames at 1080x1920 high bitrate. No black box, zero quality loss!</p>
+        </div>
+
+      </div>
+
+      <!-- Quick Subtitle Styling Controls -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <h3 class="text-sm font-semibold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+          <i class="fa-solid fa-sliders text-purple-400"></i> Subtitle Appearance
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          <div>
+            <label class="text-slate-400 block mb-1">Font Family</label>
+            <select id="composerFontSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white">
+              <option value="Anton" selected>Anton (Impactful)</option>
+              <option value="Montserrat">Montserrat (Heavy)</option>
+              <option value="Inter">Inter (Clean)</option>
+              <option value="Bebas Neue">Bebas Neue (Tall)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-slate-400 block mb-1">Primary Color</label>
+            <input type="color" id="composerColorInput" value="#FFFFFF" class="w-full h-9 rounded border border-slate-800 bg-slate-950 cursor-pointer p-1">
+          </div>
+
+          <div>
+            <label class="text-slate-400 block mb-1">Highlight Color (Active Word)</label>
+            <input type="color" id="composerHighlightInput" value="#FFDF00" class="w-full h-9 rounded border border-slate-800 bg-slate-950 cursor-pointer p-1">
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-slate-800/80 bg-slate-950 py-4 px-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>SubWebM Alpha Composer &bull; Merge Subtitles with Media with Zero Loss</div>
+      <div class="flex items-center gap-4">
+        <a href="index.html" class="hover:text-slate-300 transition">Studio</a>
+        <a href="composer.html" class="hover:text-indigo-400 transition">Composer</a>
+        <a href="updates.html" class="hover:text-slate-300 transition">Updates</a>
+        <a href="limitations.html" class="hover:text-slate-300 transition">Limitations</a>
+        <a href="https://github.com/rifaterdemsahin/subtitle-generator" target="_blank" rel="noopener noreferrer" class="hover:text-slate-300 transition">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="composer.js"></script>
+</body>
+</html>

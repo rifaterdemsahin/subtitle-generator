@@ -7,6 +7,7 @@
 A fast, client-side web application to transform video transcripts into **100% transparent animated subtitles**, ready for drag-and-drop overlay into **Canva**, Apple Final Cut Pro, Adobe Premiere Pro, and DaVinci Resolve.
 
 - 🌐 **Live Web Studio**: [https://rifaterdemsahin.github.io/subtitle-generator/](https://rifaterdemsahin.github.io/subtitle-generator/)
+- 🎨 **Video Composer (Merge with Background)**: [https://rifaterdemsahin.github.io/subtitle-generator/composer.html](https://rifaterdemsahin.github.io/subtitle-generator/composer.html)
 - 📝 **Updates & Multi-Track Guide**: [https://rifaterdemsahin.github.io/subtitle-generator/updates.html](https://rifaterdemsahin.github.io/subtitle-generator/updates.html)
 - ⚠️ **WebM Limitations & Technical Deep Dive**: [https://rifaterdemsahin.github.io/subtitle-generator/limitations.html](https://rifaterdemsahin.github.io/subtitle-generator/limitations.html)
 
