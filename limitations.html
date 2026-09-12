@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebM Alpha Limitations & Deep Dive | SubWebM Alpha</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Shared Header Navigation -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-6">
+        <a href="index.html" class="flex items-center space-x-3 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition">
+            <i class="fa-solid fa-closed-captioning text-white text-xl"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-lg leading-none bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+              SubWebM Alpha
+            </h1>
+            <p class="text-xs text-indigo-400 font-medium mt-0.5">Transparent Subtitle Generator</p>
+          </div>
+        </a>
+
+        <!-- Main Navigation Links -->
+        <nav class="hidden md:flex items-center space-x-1 pl-4 border-l border-slate-800 text-sm">
+          <a href="index.html" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-wand-magic-sparkles text-xs"></i> Video Studio
+          </a>
+          <a href="updates.html" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-clock-rotate-left text-xs"></i> Updates & Fixes
+          </a>
+          <a href="limitations.html" class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-triangle-exclamation text-xs"></i> WebM Limitations
+          </a>
+        </nav>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <a href="index.html" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-play"></i> Open Studio
+        </a>
+        <a href="https://github.com/rifaterdemsahin/subtitle-generator" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-medium text-slate-300 transition flex items-center gap-1.5">
+          <i class="fa-brands fa-github text-slate-300"></i> GitHub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+
+    <!-- Hero Title -->
+    <div class="text-center sm:text-left space-y-2 border-b border-slate-800 pb-6">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold">
+        <i class="fa-solid fa-microchip"></i> Deep Technical Analysis
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Is It Not Possible to Do It with WebM?</h2>
+      <p class="text-sm text-slate-400">The definitive technical guide on why WebM alpha transparency turns black in Canva, what browser encoders do under the hood, and how to achieve genuine transparency.</p>
+    </div>
+
+    <!-- The Big Question & Direct Answer -->
+    <div class="bg-gradient-to-br from-slate-900 to-indigo-950/40 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-4">
+      <h3 class="text-lg sm:text-xl font-bold text-white flex items-center gap-3">
+        <span class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm font-extrabold">Q</span>
+        <span>Is it theoretically possible to have transparency in WebM?</span>
+      </h3>
+      
+      <div class="p-4 bg-slate-950/70 border border-slate-800 rounded-xl space-y-2">
+        <div class="font-bold text-emerald-400 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-circle-check"></i> YES in Theory & Specifications &mdash; BUT with Major Real-World Caveats
+        </div>
+        <p class="text-slate-300 text-xs leading-relaxed">
+          The <strong>Matroska / WebM specification</strong> officially defines the <code class="bg-slate-900 px-1.5 py-0.5 rounded text-indigo-300 font-mono">AlphaMode = 1</code> header element, and the <strong>VP8 / VP9 codecs</strong> support an auxiliary alpha data stream (<code class="bg-slate-900 px-1.5 py-0.5 rounded text-indigo-300 font-mono">BlockAdditional</code> / YUVA420p).
+        </p>
+        <p class="text-slate-400 text-xs leading-relaxed">
+          However, when imported into <strong>Canva</strong> or generated inside <strong>web browsers</strong>, transparency fails and turns into a <strong>solid black box</strong> due to two fundamental bottlenecks explained below.
+        </p>
+      </div>
+    </div>
+
+    <!-- The 2 Core Bottlenecks -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+
+      <!-- Bottleneck 1: Canva Backend Transcoder -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
+          <div class="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center text-lg font-bold">
+            <i class="fa-solid fa-server"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm text-white">1. Canva's Cloud Video Transcoder</h4>
+            <p class="text-[11px] text-slate-400">Server-side H.264 conversion</p>
+          </div>
+        </div>
+
+        <p class="text-slate-300 leading-relaxed">
+          When you upload any video (<code class="text-indigo-300">.webm</code> or <code class="text-indigo-300">.mp4</code>) to Canva, Canva's cloud media ingestion workers automatically transcode the file into standard <strong>H.264 / AVC (YUV420p)</strong> so it can play back smoothly on all mobile devices and web browsers.
+        </p>
+
+        <div class="p-3 bg-red-950/30 border border-red-500/30 rounded-xl text-slate-300 space-y-1">
+          <div class="font-bold text-red-400">Why the background turns black:</div>
+          <p class="text-slate-400 text-[11px]">
+            H.264 YUV420p has <strong>NO alpha channel</strong>. During transcoding, Canva's FFmpeg pipeline flattens all transparent pixels (alpha = 0) into opaque black (<code class="text-slate-200">#000000</code>).
+          </p>
+        </div>
+      </div>
+
+      <!-- Bottleneck 2: Browser Encoding Limitations -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg font-bold">
+            <i class="fa-brands fa-chrome"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm text-white">2. Browser MediaRecorder Limitation</h4>
+            <p class="text-[11px] text-slate-400">Client-side Chromium pipeline</p>
+          </div>
+        </div>
+
+        <p class="text-slate-300 leading-relaxed">
+          In Google Chrome and Chromium browsers, the built-in <code class="text-indigo-300">MediaRecorder</code> API capturing a canvas stream automatically converts the canvas's RGBA pixel buffer into an <strong>I420 planar buffer</strong> before sending it to the VP8/VP9 hardware encoder.
+        </p>
+
+        <div class="p-3 bg-amber-950/30 border border-amber-500/30 rounded-xl text-slate-300 space-y-1">
+          <div class="font-bold text-amber-400">The Alpha Stripping Effect:</div>
+          <p class="text-slate-400 text-[11px]">
+            The <code class="text-slate-200">A</code> (Alpha) plane is discarded at the browser driver level. The resulting WebM video file contains only RGB luminance/chrominance with an opaque background.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Format Comparison Matrix Table -->
+    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+      <h3 class="font-bold text-base text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+        <i class="fa-solid fa-table-list text-indigo-400"></i> Format Transparency Matrix for Canva
+      </h3>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-400">
+              <th class="py-2.5 px-3">Format / Container</th>
+              <th class="py-2.5 px-3">Alpha Support</th>
+              <th class="py-2.5 px-3">Canva Video Timeline Behavior</th>
+              <th class="py-2.5 px-3">Result in Canva</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-slate-300">
+            <tr class="bg-emerald-950/20">
+              <td class="py-3 px-3 font-bold text-emerald-400">
+                <i class="fa-solid fa-star"></i> Canva Transparent Overlay (.png)
+              </td>
+              <td class="py-3 px-3 text-emerald-300 font-semibold">100% Lossless RGBA</td>
+              <td class="py-3 px-3">Layers on Top Purple Track. Timeline duration synced.</td>
+              <td class="py-3 px-3 text-emerald-300 font-bold">
+                <i class="fa-solid fa-circle-check"></i> 100% Transparent (Underlying video visible!)
+              </td>
+            </tr>
+            <tr class="bg-slate-950/40">
+              <td class="py-3 px-3 font-semibold text-cyan-300">
+                <i class="fa-solid fa-video"></i> QuickTime Alpha (.mov)
+              </td>
+              <td class="py-3 px-3">32-bit (24 RGB + 8 Alpha)</td>
+              <td class="py-3 px-3">Native Apple video with alpha channel decoder.</td>
+              <td class="py-3 px-3 text-cyan-300 font-semibold">
+                <i class="fa-solid fa-circle-check"></i> Transparent Video Overlay
+              </td>
+            </tr>
+            <tr class="bg-red-950/10">
+              <td class="py-3 px-3 font-semibold text-red-400">
+                <i class="fa-solid fa-file-video"></i> Standard WebM (.webm)
+              </td>
+              <td class="py-3 px-3 text-red-300">Stripped by Browser/Transcoder</td>
+              <td class="py-3 px-3">Canva transcodes to H.264 MP4.</td>
+              <td class="py-3 px-3 text-red-400 font-semibold">
+                <i class="fa-solid fa-circle-xmark"></i> Turns into Solid Black Box
+              </td>
+            </tr>
+            <tr class="bg-slate-950/40">
+              <td class="py-3 px-3 font-semibold text-emerald-400">
+                <i class="fa-solid fa-vr-cardboard"></i> Chroma Key Green (.mp4)
+              </td>
+              <td class="py-3 px-3">Solid #00FF00 Background</td>
+              <td class="py-3 px-3">Requires clicking Canva's "BG Remover" tool.</td>
+              <td class="py-3 px-3 text-slate-300">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Transparent after BG Remover
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recommendations for Canva Creators -->
+    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+      <h3 class="font-bold text-base text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+        <i class="fa-solid fa-lightbulb text-yellow-400"></i> The Recommended Workflow for Canva
+      </h3>
+
+      <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+        <div class="flex items-start gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">1</span>
+          <div>
+            <strong class="text-white">Use "Canva Transparent Overlay (.png)":</strong>
+            <p class="text-slate-400 mt-0.5">This exports a lossless 32-bit animated stream. When uploaded to Canva, Canva places it directly onto your video timeline without transcoding it to a black box.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">2</span>
+          <div>
+            <strong class="text-white">Layer on the Top Track:</strong>
+            <p class="text-slate-400 mt-0.5">Place the overlay on the top track over your video clip. The video in the middle track (your room or podcast footage) will be 100% visible through the text.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">3</span>
+          <div>
+            <strong class="text-white">No Background Remover Needed:</strong>
+            <p class="text-slate-400 mt-0.5">Because the background is already pure transparent, you do NOT need to click BG Remover in Canva, preserving 100% crisp font edges.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <a href="index.html" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition flex items-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Go to Video Studio & Export
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-slate-800/80 bg-slate-950 py-4 px-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>SubWebM Alpha &bull; Transparent Subtitle Generator for Canva & Video Editors</div>
+      <div class="flex items-center gap-4">
+        <a href="index.html" class="hover:text-slate-300 transition">Studio</a>
+        <a href="updates.html" class="hover:text-slate-300 transition">Updates</a>
+        <a href="limitations.html" class="hover:text-slate-300 transition">Limitations</a>
+        <a href="https://github.com/rifaterdemsahin/subtitle-generator" target="_blank" rel="noopener noreferrer" class="hover:text-slate-300 transition">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
