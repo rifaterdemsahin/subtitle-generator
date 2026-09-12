@@ -1,5 +1,8 @@
 /**
- * SubWebM Composer - Merge Subtitles with Background Media Losslessly
+ * SubWebM 3-Layer Video Composer
+ * Layer 1: Background Image / Backdrop
+ * Layer 2: Chroma Keyed Video (WebM / MP4 Green Screen Removal)
+ * Layer 3: Subtitles / Captions Overlay
  */
 
 const composerState = {
@@ -10,13 +13,23 @@ const composerState = {
   playbackSpeed: 1.0,
   lastFrameTimestamp: null,
 
-  bgType: 'preset', // 'preset', 'image', 'video'
+  // Layer 1: Background Image
   bgPreset: 'studio',
   bgImageObj: null,
-  bgVideoObj: null,
   bgDarkness: 0.35,
   bgBlur: 2,
 
+  // Layer 2: Chroma Keyed Video
+  videoObj: null,
+  isSampleVideo: false,
+  chromaEnabled: true,
+  chromaKeyColor: '#00FF00',
+  chromaThreshold: 45,
+  chromaSoftness: 15,
+  videoScale: 1.0,
+  videoPosYPercent: 50,
+
+  // Layer 3: Subtitles
   style: {
     width: 1080,
     height: 1920,
@@ -35,25 +48,24 @@ const composerState = {
 
 const SAMPLE_COMPOSER_SRT = `1
 00:00:00,500 --> 00:00:02,300
-MERGE SUBTITLES DIRECTLY
+LAYER 1: BACKGROUND IMAGE
 
 2
 00:00:02,400 --> 00:00:04,900
-WITH YOUR BACKGROUND IMAGE
+LAYER 2: CHROMA KEYED VIDEO
 
 3
 00:00:04,950 --> 00:00:07,400
-AT 100% ORIGINAL QUALITY
+LAYER 3: ANIMATED SUBTITLES
 
 4
 00:00:07,500 --> 00:00:09,800
-ZERO QUALITY LOSS FOR CANVA!`;
+COMPOSED WITH ZERO QUALITY LOSS!`;
 
 // DOM Elements
 const compCanvas = document.getElementById('composerCanvas');
 const compCtx = compCanvas.getContext('2d', { willReadFrequently: true });
 const compTranscriptInput = document.getElementById('composerTranscriptInput');
-const compCueCount = document.getElementById('composerCueCount');
 const compTimeScrubber = document.getElementById('composerTimeScrubber');
 const compCurrentTimeLabel = document.getElementById('composerCurrentTimeLabel');
 const compTotalTimeLabel = document.getElementById('composerTotalTimeLabel');
@@ -64,75 +76,118 @@ const compProgressContainer = document.getElementById('composerProgressContainer
 const compProgressBar = document.getElementById('composerProgressBar');
 const compProgressPct = document.getElementById('composerProgressPct');
 
+// Offscreen buffer for chroma key processing
+const offVideoCanvas = document.createElement('canvas');
+const offVideoCtx = offVideoCanvas.getContext('2d', { willReadFrequently: true });
+
 document.addEventListener('DOMContentLoaded', () => {
   setupComposerEvents();
   compTranscriptInput.value = SAMPLE_COMPOSER_SRT;
   parseComposerTranscript();
+  loadSampleSpeakerVideo();
   renderComposerFrame();
 });
 
 function setupComposerEvents() {
-  // Preset buttons
+  // Layer 1: Preset Backgrounds
   document.querySelectorAll('.bg-preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      composerState.bgType = 'preset';
+      composerState.bgImageObj = null;
       composerState.bgPreset = btn.dataset.bg;
       renderComposerFrame();
     });
   });
 
-  // Dropzone & File Input
-  const dropZone = document.getElementById('bgDropZone');
-  const fileInput = document.getElementById('bgFileInput');
-  dropZone.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) handleBgFile(e.target.files[0]);
+  // Layer 1: Image Upload
+  const bgDropZone = document.getElementById('bgDropZone');
+  const bgFileInput = document.getElementById('bgFileInput');
+  bgDropZone.addEventListener('click', () => bgFileInput.click());
+  bgFileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleBgImageFile(e.target.files[0]);
   });
-  dropZone.addEventListener('dragover', (e) => {
+  bgDropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dropZone.classList.add('border-emerald-500', 'bg-emerald-950/20');
+    bgDropZone.classList.add('border-blue-500', 'bg-blue-950/20');
   });
-  dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('border-emerald-500', 'bg-emerald-950/20');
+  bgDropZone.addEventListener('dragleave', () => {
+    bgDropZone.classList.remove('border-blue-500', 'bg-blue-950/20');
   });
-  dropZone.addEventListener('drop', (e) => {
+  bgDropZone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropZone.classList.remove('border-emerald-500', 'bg-emerald-950/20');
-    if (e.dataTransfer.files.length > 0) handleBgFile(e.dataTransfer.files[0]);
+    bgDropZone.classList.remove('border-blue-500', 'bg-blue-950/20');
+    if (e.dataTransfer.files.length > 0) handleBgImageFile(e.dataTransfer.files[0]);
   });
 
-  // Visual adjustments
-  const darknessSlider = document.getElementById('bgDarknessSlider');
-  darknessSlider.addEventListener('input', (e) => {
+  // Layer 1: Dimming & Blur
+  document.getElementById('bgDarknessSlider').addEventListener('input', (e) => {
     composerState.bgDarkness = parseInt(e.target.value, 10) / 100;
     document.getElementById('bgDarknessVal').textContent = `${e.target.value}%`;
     renderComposerFrame();
   });
-
-  const blurSlider = document.getElementById('bgBlurSlider');
-  blurSlider.addEventListener('input', (e) => {
+  document.getElementById('bgBlurSlider').addEventListener('input', (e) => {
     composerState.bgBlur = parseInt(e.target.value, 10);
     document.getElementById('bgBlurVal').textContent = `${e.target.value}px`;
     renderComposerFrame();
   });
 
-  // Transcript events
+  // Layer 2: Video Upload & Sample
+  const videoDropZone = document.getElementById('videoDropZone');
+  const videoFileInput = document.getElementById('videoFileInput');
+  videoDropZone.addEventListener('click', () => videoFileInput.click());
+  videoFileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleVideoFile(e.target.files[0]);
+  });
+  videoDropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    videoDropZone.classList.add('border-emerald-500', 'bg-emerald-950/20');
+  });
+  videoDropZone.addEventListener('dragleave', () => {
+    videoDropZone.classList.remove('border-emerald-500', 'bg-emerald-950/20');
+  });
+  videoDropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    videoDropZone.classList.remove('border-emerald-500', 'bg-emerald-950/20');
+    if (e.dataTransfer.files.length > 0) handleVideoFile(e.dataTransfer.files[0]);
+  });
+
+  document.getElementById('loadSampleGreenVideoBtn').addEventListener('click', loadSampleSpeakerVideo);
+
+  // Layer 2: Chroma Key Controls
+  document.getElementById('chromaKeyEnabled').addEventListener('change', (e) => {
+    composerState.chromaEnabled = e.target.checked;
+    renderComposerFrame();
+  });
+  document.getElementById('chromaKeyColor').addEventListener('input', (e) => {
+    composerState.chromaKeyColor = e.target.value;
+    renderComposerFrame();
+  });
+  document.getElementById('chromaThresholdSlider').addEventListener('input', (e) => {
+    composerState.chromaThreshold = parseInt(e.target.value, 10);
+    document.getElementById('chromaThresholdVal').textContent = e.target.value;
+    renderComposerFrame();
+  });
+  document.getElementById('chromaSoftnessSlider').addEventListener('input', (e) => {
+    composerState.chromaSoftness = parseInt(e.target.value, 10);
+    document.getElementById('chromaSoftnessVal').textContent = e.target.value;
+    renderComposerFrame();
+  });
+  document.getElementById('videoScaleSlider').addEventListener('input', (e) => {
+    composerState.videoScale = parseInt(e.target.value, 10) / 100;
+    document.getElementById('videoScaleVal').textContent = `${e.target.value}%`;
+    renderComposerFrame();
+  });
+  document.getElementById('videoPosYSlider').addEventListener('input', (e) => {
+    composerState.videoPosYPercent = parseInt(e.target.value, 10);
+    document.getElementById('videoPosYVal').textContent = `${e.target.value}%`;
+    renderComposerFrame();
+  });
+
+  // Layer 3: Subtitle Inputs
   compTranscriptInput.addEventListener('input', parseComposerTranscript);
   document.getElementById('sampleTranscriptBtn').addEventListener('click', () => {
     compTranscriptInput.value = SAMPLE_COMPOSER_SRT;
     parseComposerTranscript();
   });
-
-  // Player Controls
-  compPlayBtn.addEventListener('click', toggleComposerPlay);
-  compStopBtn.addEventListener('click', stopComposerPlay);
-  compTimeScrubber.addEventListener('input', (e) => {
-    composerState.currentTime = parseFloat(e.target.value);
-    compCurrentTimeLabel.textContent = formatTime(composerState.currentTime);
-    renderComposerFrame();
-  });
-
-  // Style controls
   document.getElementById('composerFontSelect').addEventListener('change', (e) => {
     composerState.style.fontFamily = e.target.value;
     renderComposerFrame();
@@ -146,37 +201,62 @@ function setupComposerEvents() {
     renderComposerFrame();
   });
 
+  // Player Controls
+  compPlayBtn.addEventListener('click', toggleComposerPlay);
+  compStopBtn.addEventListener('click', stopComposerPlay);
+  compTimeScrubber.addEventListener('input', (e) => {
+    composerState.currentTime = parseFloat(e.target.value);
+    compCurrentTimeLabel.textContent = formatTime(composerState.currentTime);
+    if (composerState.videoObj && !composerState.isSampleVideo) {
+      composerState.videoObj.currentTime = composerState.currentTime % (composerState.videoObj.duration || 1);
+    }
+    renderComposerFrame();
+  });
+
   // Export
   exportMergedVideoBtn.addEventListener('click', exportMergedVideo);
 }
 
-function handleBgFile(file) {
-  if (file.type.startsWith('image/')) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        composerState.bgType = 'image';
-        composerState.bgImageObj = img;
-        renderComposerFrame();
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  } else if (file.type.startsWith('video/')) {
-    const url = URL.createObjectURL(file);
-    const video = document.createElement('video');
-    video.src = url;
-    video.muted = true;
-    video.playsInline = true;
-    video.onloadeddata = () => {
-      composerState.bgType = 'video';
-      composerState.bgVideoObj = video;
+// --- Layer 1: Image Loader ---
+function handleBgImageFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      composerState.bgImageObj = img;
       renderComposerFrame();
     };
-  }
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
+// --- Layer 2: Video Loader ---
+function handleVideoFile(file) {
+  const url = URL.createObjectURL(file);
+  const video = document.createElement('video');
+  video.src = url;
+  video.muted = true;
+  video.playsInline = true;
+  video.loop = true;
+  video.onloadeddata = () => {
+    composerState.videoObj = video;
+    composerState.isSampleVideo = false;
+    offVideoCanvas.width = video.videoWidth || 1080;
+    offVideoCanvas.height = video.videoHeight || 1920;
+    renderComposerFrame();
+  };
+}
+
+function loadSampleSpeakerVideo() {
+  composerState.isSampleVideo = true;
+  composerState.videoObj = null;
+  offVideoCanvas.width = 720;
+  offVideoCanvas.height = 1280;
+  renderComposerFrame();
+}
+
+// --- Layer 3: Subtitle Parsing ---
 function parseComposerTranscript() {
   const raw = compTranscriptInput.value.trim();
   if (!raw) {
@@ -236,7 +316,6 @@ function parseComposerTranscript() {
     composerState.duration = 10.0;
   }
 
-  compCueCount.textContent = `${cues.length} cues loaded`;
   updateDurationUI();
   renderComposerFrame();
 }
@@ -262,6 +341,7 @@ function generateWordTimings(text, cueStart, cueEnd) {
   }));
 }
 
+// --- Playback Engine ---
 function toggleComposerPlay() {
   if (composerState.isPlaying) pauseComposerPlay();
   else startComposerPlay();
@@ -272,6 +352,9 @@ function startComposerPlay() {
   composerState.isPlaying = true;
   composerState.lastFrameTimestamp = performance.now();
   compPlayBtn.innerHTML = '<i class="fa-solid fa-pause text-xs"></i>';
+  if (composerState.videoObj && !composerState.isSampleVideo) {
+    composerState.videoObj.play();
+  }
   requestAnimationFrame(composerLoop);
 }
 
@@ -279,6 +362,9 @@ function pauseComposerPlay() {
   composerState.isPlaying = false;
   composerState.lastFrameTimestamp = null;
   compPlayBtn.innerHTML = '<i class="fa-solid fa-play text-xs"></i>';
+  if (composerState.videoObj && !composerState.isSampleVideo) {
+    composerState.videoObj.pause();
+  }
 }
 
 function stopComposerPlay() {
@@ -286,6 +372,9 @@ function stopComposerPlay() {
   composerState.currentTime = 0;
   compTimeScrubber.value = 0;
   compCurrentTimeLabel.textContent = formatTime(0);
+  if (composerState.videoObj && !composerState.isSampleVideo) {
+    composerState.videoObj.currentTime = 0;
+  }
   renderComposerFrame();
 }
 
@@ -324,35 +413,172 @@ function formatTime(secs) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${ms}`;
 }
 
-// --- Composite Canvas Renderer ---
+// ============================================================================
+// --- 3-LAYER COMPOSITE RENDERING PIPELINE ---
+// ============================================================================
+
 function renderComposerFrame(targetCtx = compCtx, targetTime = composerState.currentTime) {
   const w = composerState.style.width;
   const h = composerState.style.height;
 
   targetCtx.clearRect(0, 0, w, h);
 
-  // 1. Draw Background Layer
+  // -------------------------------------------------------------
+  // LAYER 1: Background Image / Backdrop
+  // -------------------------------------------------------------
   targetCtx.save();
   if (composerState.bgBlur > 0) {
     targetCtx.filter = `blur(${composerState.bgBlur}px)`;
   }
 
-  if (composerState.bgType === 'image' && composerState.bgImageObj) {
-    drawCoverImage(targetCtx, composerState.bgImageObj, w, h);
-  } else if (composerState.bgType === 'video' && composerState.bgVideoObj) {
-    drawCoverImage(targetCtx, composerState.bgVideoObj, w, h);
+  if (composerState.bgImageObj) {
+    drawCover(targetCtx, composerState.bgImageObj, w, h);
   } else {
     drawPresetBackdrop(targetCtx, composerState.bgPreset, w, h);
   }
   targetCtx.restore();
 
-  // 2. Draw Darkness Overlay (Dimming for subtitle readability)
+  // Dimming Tint for subtitle contrast
   if (composerState.bgDarkness > 0) {
     targetCtx.fillStyle = `rgba(0, 0, 0, ${composerState.bgDarkness})`;
     targetCtx.fillRect(0, 0, w, h);
   }
 
-  // 3. Draw Subtitles Overlay
+  // -------------------------------------------------------------
+  // LAYER 2: Video with Real-Time Chroma Keying
+  // -------------------------------------------------------------
+  renderChromaKeyVideoLayer(targetCtx, targetTime, w, h);
+
+  // -------------------------------------------------------------
+  // LAYER 3: Animated Subtitles Overlay (Top)
+  // -------------------------------------------------------------
+  renderSubtitleOverlayLayer(targetCtx, targetTime, w, h);
+}
+
+function renderChromaKeyVideoLayer(targetCtx, targetTime, w, h) {
+  const vw = offVideoCanvas.width || 720;
+  const vh = offVideoCanvas.height || 1280;
+
+  // Step A: Draw raw video frame onto offscreen buffer
+  if (composerState.isSampleVideo || !composerState.videoObj) {
+    drawSamplePresenterFrame(offVideoCtx, targetTime, vw, vh);
+  } else {
+    offVideoCtx.drawImage(composerState.videoObj, 0, 0, vw, vh);
+  }
+
+  // Step B: Process Chroma Keying if enabled
+  if (composerState.chromaEnabled) {
+    const frameData = offVideoCtx.getImageData(0, 0, vw, vh);
+    applyChromaKey(frameData, composerState.chromaKeyColor, composerState.chromaThreshold, composerState.chromaSoftness);
+    offVideoCtx.putImageData(frameData, 0, 0);
+  }
+
+  // Step C: Draw keyed video frame onto composite target canvas
+  const scale = composerState.videoScale || 1.0;
+  const drawW = w * scale;
+  const drawH = (drawW / vw) * vh;
+  const posX = (w - drawW) / 2;
+  const posY = (h * (composerState.videoPosYPercent || 50) / 100) - (drawH / 2);
+
+  targetCtx.drawImage(offVideoCanvas, posX, posY, drawW, drawH);
+}
+
+/**
+ * High-performance per-pixel RGBA Green Screen Chroma Keyer with Despill
+ */
+function applyChromaKey(imageData, keyHex, threshold, softness) {
+  const data = imageData.data;
+  const len = data.length;
+
+  // Parse key color RGB
+  const keyRGB = hexToRgb(keyHex);
+  const isGreenKey = keyRGB.g > keyRGB.r && keyRGB.g > keyRGB.b;
+
+  const thresh = threshold * 2.2;
+  const soft = Math.max(1, softness * 1.8);
+
+  for (let i = 0; i < len; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+
+    if (isGreenKey) {
+      // Green Dominance distance calculation
+      const maxRB = Math.max(r, b);
+      const diff = g - maxRB;
+
+      if (diff > thresh) {
+        data[i + 3] = 0; // Pure transparent
+      } else if (diff > (thresh - soft)) {
+        const edge = (diff - (thresh - soft)) / soft;
+        data[i + 3] = Math.round(255 * (1 - edge));
+        // Despill green edge
+        data[i + 1] = maxRB;
+      }
+    } else {
+      // Euclidean color distance for custom color keys
+      const dist = Math.sqrt((r - keyRGB.r) ** 2 + (g - keyRGB.g) ** 2 + (b - keyRGB.b) ** 2);
+      if (dist < thresh) {
+        data[i + 3] = 0;
+      } else if (dist < (thresh + soft)) {
+        const edge = (dist - thresh) / soft;
+        data[i + 3] = Math.round(255 * edge);
+      }
+    }
+  }
+}
+
+/**
+ * Built-in Sample Presenter generator with pure #00FF00 green background for instant testing
+ */
+function drawSamplePresenterFrame(ctx, t, w, h) {
+  // Pure #00FF00 Green Screen Background
+  ctx.fillStyle = '#00FF00';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.save();
+  const bounceY = Math.sin(t * 4) * 8;
+  const centerX = w / 2;
+  const centerY = (h * 0.55) + bounceY;
+
+  // Presenter Body (Shoulders / Torso)
+  ctx.fillStyle = '#1e293b';
+  ctx.beginPath();
+  ctx.ellipse(centerX, centerY + 220, 180, 260, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Presenter Head (Skin Tone)
+  ctx.fillStyle = '#f5d0b5';
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 100, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Hair (Dark)
+  ctx.fillStyle = '#18181b';
+  ctx.beginPath();
+  ctx.arc(centerX, centerY - 25, 102, Math.PI, Math.PI * 2);
+  ctx.fill();
+
+  // Glasses / Eyes
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(centerX - 55, centerY - 15, 38, 24);
+  ctx.fillRect(centerX + 17, centerY - 15, 38, 24);
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#0f172a';
+  ctx.strokeRect(centerX - 55, centerY - 15, 38, 24);
+  ctx.strokeRect(centerX + 17, centerY - 15, 38, 24);
+
+  // Animated Speaking Mouth
+  const mouthOpen = Math.abs(Math.sin(t * 12)) * 14;
+  ctx.fillStyle = '#881337';
+  ctx.beginPath();
+  ctx.ellipse(centerX, centerY + 45, 20, Math.max(3, mouthOpen), 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function renderSubtitleOverlayLayer(targetCtx, targetTime, w, h) {
   const activeCue = composerState.cues.find(c => targetTime >= c.start && targetTime <= c.end);
   if (!activeCue) return;
 
@@ -467,15 +693,14 @@ function drawPresetBackdrop(ctx, preset, w, h) {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
   } else {
-    // Dark minimal
     ctx.fillStyle = '#030712';
     ctx.fillRect(0, 0, w, h);
   }
 }
 
-function drawCoverImage(ctx, media, targetW, targetH) {
-  const mw = media.videoWidth || media.naturalWidth || media.width;
-  const mh = media.videoHeight || media.naturalHeight || media.height;
+function drawCover(ctx, media, targetW, targetH) {
+  const mw = media.naturalWidth || media.width;
+  const mh = media.naturalHeight || media.height;
   if (!mw || !mh) return;
 
   const targetRatio = targetW / targetH;
@@ -497,7 +722,18 @@ function drawCoverImage(ctx, media, targetW, targetH) {
   ctx.drawImage(media, sx, sy, sw, sh, 0, 0, targetW, targetH);
 }
 
-// --- High Bitrate Merged Video Export ---
+function hexToRgb(hex) {
+  let c = hex.replace('#', '');
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  const num = parseInt(c, 16);
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255
+  };
+}
+
+// --- High Bitrate Composite Video Export ---
 async function exportMergedVideo() {
   if (composerState.cues.length === 0) {
     alert("Please load or paste subtitles before exporting!");
@@ -529,7 +765,7 @@ async function exportMergedVideo() {
   const chunks = [];
   const recorder = new MediaRecorder(stream, {
     mimeType: chosenMime,
-    videoBitsPerSecond: 16000000 // 16 Mbps ultra high quality
+    videoBitsPerSecond: 16000000 // 16 Mbps crystal clear
   });
 
   recorder.ondataavailable = (e) => {
@@ -540,7 +776,7 @@ async function exportMergedVideo() {
     const blob = new Blob(chunks, { type: chosenMime });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `merged_subtitle_video_${Date.now()}.webm`;
+    a.download = `3layer_composed_video_${Date.now()}.webm`;
     document.body.appendChild(a);
     a.click();
     setTimeout(() => {
