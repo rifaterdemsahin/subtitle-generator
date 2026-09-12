@@ -1,8 +1,9 @@
 /**
- * SubWebM 3-Layer Video Composer
+ * SubWebM 3-Layer Video Composer v2.3
  * Layer 1: Background Image / Backdrop
  * Layer 2: Chroma Keyed Video (WebM / MP4 Green Screen Removal)
  * Layer 3: Subtitles / Captions Overlay
+ * Export: Universal MP4 (H.264) & WebM (VP9) with Frame-Accurate Video Sync
  */
 
 const composerState = {
@@ -60,7 +61,7 @@ LAYER 3: ANIMATED SUBTITLES
 
 4
 00:00:07,500 --> 00:00:09,800
-COMPOSED WITH ZERO QUALITY LOSS!`;
+EXPORTED AS UNIVERSAL MP4!`;
 
 // DOM Elements
 const compCanvas = document.getElementById('composerCanvas');
@@ -72,6 +73,7 @@ const compTotalTimeLabel = document.getElementById('composerTotalTimeLabel');
 const compPlayBtn = document.getElementById('composerPlayBtn');
 const compStopBtn = document.getElementById('composerStopBtn');
 const exportMergedVideoBtn = document.getElementById('exportMergedVideoBtn');
+const composerExportFormat = document.getElementById('composerExportFormat');
 const compProgressContainer = document.getElementById('composerProgressContainer');
 const compProgressBar = document.getElementById('composerProgressBar');
 const compProgressPct = document.getElementById('composerProgressPct');
@@ -438,7 +440,7 @@ function renderComposerFrame(targetCtx = compCtx, targetTime = composerState.cur
   }
   targetCtx.restore();
 
-  // Dimming Tint for subtitle contrast
+  // Dimming Tint
   if (composerState.bgDarkness > 0) {
     targetCtx.fillStyle = `rgba(0, 0, 0, ${composerState.bgDarkness})`;
     targetCtx.fillRect(0, 0, w, h);
@@ -483,14 +485,9 @@ function renderChromaKeyVideoLayer(targetCtx, targetTime, w, h) {
   targetCtx.drawImage(offVideoCanvas, posX, posY, drawW, drawH);
 }
 
-/**
- * High-performance per-pixel RGBA Green Screen Chroma Keyer with Despill
- */
 function applyChromaKey(imageData, keyHex, threshold, softness) {
   const data = imageData.data;
   const len = data.length;
-
-  // Parse key color RGB
   const keyRGB = hexToRgb(keyHex);
   const isGreenKey = keyRGB.g > keyRGB.r && keyRGB.g > keyRGB.b;
 
@@ -503,20 +500,17 @@ function applyChromaKey(imageData, keyHex, threshold, softness) {
     const b = data[i + 2];
 
     if (isGreenKey) {
-      // Green Dominance distance calculation
       const maxRB = Math.max(r, b);
       const diff = g - maxRB;
 
       if (diff > thresh) {
-        data[i + 3] = 0; // Pure transparent
+        data[i + 3] = 0;
       } else if (diff > (thresh - soft)) {
         const edge = (diff - (thresh - soft)) / soft;
         data[i + 3] = Math.round(255 * (1 - edge));
-        // Despill green edge
         data[i + 1] = maxRB;
       }
     } else {
-      // Euclidean color distance for custom color keys
       const dist = Math.sqrt((r - keyRGB.r) ** 2 + (g - keyRGB.g) ** 2 + (b - keyRGB.b) ** 2);
       if (dist < thresh) {
         data[i + 3] = 0;
@@ -528,11 +522,7 @@ function applyChromaKey(imageData, keyHex, threshold, softness) {
   }
 }
 
-/**
- * Built-in Sample Presenter generator with pure #00FF00 green background for instant testing
- */
 function drawSamplePresenterFrame(ctx, t, w, h) {
-  // Pure #00FF00 Green Screen Background
   ctx.fillStyle = '#00FF00';
   ctx.fillRect(0, 0, w, h);
 
@@ -568,7 +558,7 @@ function drawSamplePresenterFrame(ctx, t, w, h) {
   ctx.strokeRect(centerX - 55, centerY - 15, 38, 24);
   ctx.strokeRect(centerX + 17, centerY - 15, 38, 24);
 
-  // Animated Speaking Mouth
+  // Animated Speaking Mouth (Frame-accurate synchronized with t)
   const mouthOpen = Math.abs(Math.sin(t * 12)) * 14;
   ctx.fillStyle = '#881337';
   ctx.beginPath();
@@ -733,7 +723,34 @@ function hexToRgb(hex) {
   };
 }
 
-// --- High Bitrate Composite Video Export ---
+/**
+ * Frame-accurate video seek helper with event listener and safety timeout
+ */
+function seekVideo(video, targetTime) {
+  return new Promise((resolve) => {
+    if (Math.abs(video.currentTime - targetTime) < 0.02) {
+      resolve();
+      return;
+    }
+    let timeoutId;
+    const onSeeked = () => {
+      clearTimeout(timeoutId);
+      video.removeEventListener('seeked', onSeeked);
+      resolve();
+    };
+    timeoutId = setTimeout(() => {
+      video.removeEventListener('seeked', onSeeked);
+      resolve();
+    }, 120);
+    video.addEventListener('seeked', onSeeked);
+    video.currentTime = targetTime;
+  });
+}
+
+// ============================================================================
+// --- EXPORT ENGINES: Universal MP4 (H.264) & WebM (VP9) ---
+// ============================================================================
+
 async function exportMergedVideo() {
   if (composerState.cues.length === 0) {
     alert("Please load or paste subtitles before exporting!");
@@ -741,6 +758,8 @@ async function exportMergedVideo() {
   }
 
   pauseComposerPlay();
+
+  const chosenFormat = (composerExportFormat ? composerExportFormat.value : 'mp4');
 
   compProgressContainer.classList.remove('hidden');
   compProgressBar.style.width = '0%';
@@ -758,14 +777,162 @@ async function exportMergedVideo() {
   offCanvas.height = h;
   const offCtx = offCanvas.getContext('2d');
 
-  const stream = offCanvas.captureStream(fps);
-  const mimeTypes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+  // Check if MP4 WebCodecs is supported
+  if (chosenFormat === 'mp4' && typeof VideoEncoder !== 'undefined' && typeof Mp4Muxer !== 'undefined') {
+    try {
+      await exportMp4WebCodecs(offCanvas, offCtx, w, h, fps, totalFrames);
+      return;
+    } catch (mp4Err) {
+      console.warn("WebCodecs MP4 encoding failed, falling back to WebM:", mp4Err);
+    }
+  } else if (chosenFormat === 'webm' && typeof VideoEncoder !== 'undefined' && typeof WebMMuxer !== 'undefined') {
+    try {
+      await exportWebmWebCodecs(offCanvas, offCtx, w, h, fps, totalFrames);
+      return;
+    } catch (webmErr) {
+      console.warn("WebCodecs WebM encoding failed, falling back to MediaRecorder:", webmErr);
+    }
+  }
+
+  // Fallback MediaRecorder
+  await exportMediaRecorderFallback(offCanvas, offCtx, w, h, fps, totalFrames);
+}
+
+/**
+ * 1. UNIVERSAL MP4 EXPORT (H.264 / AVC)
+ * Plays natively on macOS QuickTime Player, Windows Media Player, iOS, Android, Canva!
+ */
+async function exportMp4WebCodecs(canvas, ctx, w, h, fps, totalFrames) {
+  const muxer = new Mp4Muxer.Muxer({
+    target: new Mp4Muxer.ArrayBufferTarget(),
+    video: {
+      codec: 'avc',
+      width: w,
+      height: h
+    },
+    fastStart: 'in-memory'
+  });
+
+  let encodedCount = 0;
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => {
+      muxer.addVideoChunk(chunk, meta);
+    },
+    error: (e) => {
+      console.error("VideoEncoder Error:", e);
+    }
+  });
+
+  encoder.configure({
+    codec: 'avc1.4d002a', // Main Profile Level 4.2
+    width: w,
+    height: h,
+    bitrate: 16000000 // 16 Mbps ultra crisp
+  });
+
+  for (let f = 0; f < totalFrames; f++) {
+    const t = f / fps;
+
+    // Frame-accurate video seek to guarantee video is NOT static
+    if (composerState.videoObj && !composerState.isSampleVideo) {
+      const targetTime = t % (composerState.videoObj.duration || 1);
+      await seekVideo(composerState.videoObj, targetTime);
+    }
+
+    renderComposerFrame(ctx, t);
+
+    const frameTimestampMicros = Math.round(t * 1000000);
+    const videoFrame = new VideoFrame(canvas, { timestamp: frameTimestampMicros });
+    encoder.encode(videoFrame, { keyFrame: f % 30 === 0 });
+    videoFrame.close();
+
+    encodedCount++;
+    const progress = Math.min(96, Math.round((encodedCount / totalFrames) * 94));
+    compProgressBar.style.width = `${progress}%`;
+    compProgressPct.textContent = `${progress}%`;
+
+    if (f % 5 === 0) await new Promise(r => setTimeout(r, 0));
+  }
+
+  await encoder.flush();
+  muxer.finalize();
+
+  const { buffer } = muxer.target;
+  const blob = new Blob([buffer], { type: 'video/mp4' });
+  triggerDownload(blob, `composed_video_${Date.now()}.mp4`);
+  finishExport();
+}
+
+/**
+ * 2. WEBM VP9 EXPORT
+ */
+async function exportWebmWebCodecs(canvas, ctx, w, h, fps, totalFrames) {
+  const muxer = new WebMMuxer.Muxer({
+    target: new WebMMuxer.ArrayBufferTarget(),
+    video: {
+      codec: 'V_VP9',
+      width: w,
+      height: h
+    }
+  });
+
+  let encodedCount = 0;
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    error: console.error
+  });
+
+  encoder.configure({
+    codec: 'vp09.00.10.08',
+    width: w,
+    height: h,
+    bitrate: 16000000
+  });
+
+  for (let f = 0; f < totalFrames; f++) {
+    const t = f / fps;
+
+    if (composerState.videoObj && !composerState.isSampleVideo) {
+      const targetTime = t % (composerState.videoObj.duration || 1);
+      await seekVideo(composerState.videoObj, targetTime);
+    }
+
+    renderComposerFrame(ctx, t);
+
+    const frameTimestampMicros = Math.round(t * 1000000);
+    const videoFrame = new VideoFrame(canvas, { timestamp: frameTimestampMicros });
+    encoder.encode(videoFrame, { keyFrame: f % 30 === 0 });
+    videoFrame.close();
+
+    encodedCount++;
+    const progress = Math.min(96, Math.round((encodedCount / totalFrames) * 94));
+    compProgressBar.style.width = `${progress}%`;
+    compProgressPct.textContent = `${progress}%`;
+
+    if (f % 5 === 0) await new Promise(r => setTimeout(r, 0));
+  }
+
+  await encoder.flush();
+  muxer.finalize();
+
+  const { buffer } = muxer.target;
+  const blob = new Blob([buffer], { type: 'video/webm' });
+  triggerDownload(blob, `composed_video_${Date.now()}.webm`);
+  finishExport();
+}
+
+/**
+ * 3. FALLBACK MEDIA RECORDER
+ */
+async function exportMediaRecorderFallback(canvas, ctx, w, h, fps, totalFrames) {
+  const stream = canvas.captureStream(fps);
+  const mimeTypes = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
   let chosenMime = mimeTypes.find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
 
   const chunks = [];
   const recorder = new MediaRecorder(stream, {
     mimeType: chosenMime,
-    videoBitsPerSecond: 16000000 // 16 Mbps crystal clear
+    videoBitsPerSecond: 16000000
   });
 
   recorder.ondataavailable = (e) => {
@@ -773,24 +940,10 @@ async function exportMergedVideo() {
   };
 
   recorder.onstop = () => {
+    const ext = chosenMime.includes('mp4') ? 'mp4' : 'webm';
     const blob = new Blob(chunks, { type: chosenMime });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `3layer_composed_video_${Date.now()}.webm`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(a.href);
-    }, 2000);
-
-    compProgressBar.style.width = '100%';
-    compProgressPct.textContent = '100% - Done!';
-    setTimeout(() => {
-      compProgressContainer.classList.add('hidden');
-      exportMergedVideoBtn.disabled = false;
-      exportMergedVideoBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-    }, 2000);
+    triggerDownload(blob, `composed_video_${Date.now()}.${ext}`);
+    finishExport();
   };
 
   recorder.start();
@@ -798,22 +951,50 @@ async function exportMergedVideo() {
   let f = 0;
   const frameIntervalMs = 1000 / fps;
 
-  const renderNextFrame = () => {
+  const renderNext = async () => {
     if (f > totalFrames) {
       recorder.stop();
       return;
     }
-
     const t = f / fps;
-    renderComposerFrame(offCtx, t);
+
+    if (composerState.videoObj && !composerState.isSampleVideo) {
+      const targetTime = t % (composerState.videoObj.duration || 1);
+      await seekVideo(composerState.videoObj, targetTime);
+    }
+
+    renderComposerFrame(ctx, t);
 
     const progress = Math.min(98, Math.round((f / totalFrames) * 98));
     compProgressBar.style.width = `${progress}%`;
     compProgressPct.textContent = `${progress}%`;
 
     f++;
-    setTimeout(renderNextFrame, frameIntervalMs);
+    setTimeout(renderNext, frameIntervalMs);
   };
 
-  renderNextFrame();
+  renderNext();
+}
+
+function finishExport() {
+  compProgressBar.style.width = '100%';
+  compProgressPct.textContent = '100% - Ready!';
+  setTimeout(() => {
+    compProgressContainer.classList.add('hidden');
+    exportMergedVideoBtn.disabled = false;
+    exportMergedVideoBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+  }, 2000);
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 2000);
 }

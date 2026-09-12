@@ -74,6 +74,42 @@
     <!-- Timeline of Updates -->
     <div class="space-y-6">
 
+      <!-- Update Item: v2.3 Frame-Accurate Video Sync & Universal MP4 -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 relative overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
+              <i class="fa-solid fa-circle-play"></i>
+            </span>
+            <div>
+              <h3 class="font-bold text-base text-white">v2.3 Update: Animated Video Frame Sync & Universal MP4 Export</h3>
+              <p class="text-xs text-slate-400">Fixed static video exports & added native macOS QuickTime / Windows MP4 support</p>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/40">LIVE</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div class="p-3.5 bg-slate-950/70 rounded-xl border border-slate-800 space-y-1.5">
+            <div class="font-bold text-emerald-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-film"></i> 1. Frame-Accurate Video Animation
+            </div>
+            <p class="text-slate-300 leading-relaxed text-[11px]">
+              During export, the rendering engine now seeks the video frame-by-frame (<code class="text-indigo-300 font-mono">await seekVideo(t)</code>) so the presenter video in Layer 2 advances smoothly in exact synchronicity with the subtitles and background.
+            </p>
+          </div>
+
+          <div class="p-3.5 bg-slate-950/70 rounded-xl border border-slate-800 space-y-1.5">
+            <div class="font-bold text-blue-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-desktop"></i> 2. Native macOS & Windows MP4 (H.264)
+            </div>
+            <p class="text-slate-300 leading-relaxed text-[11px]">
+              Exported videos now default to <strong>Standard MP4 (H.264 / AVC)</strong> with fast-start headers. When downloaded, you can double-click and play them directly in <strong>macOS QuickTime Player</strong>, Spacebar Quick Look, Windows Media Player, and Canva without compatibility errors!
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Update Item: Canva Multi-Track Architecture -->
       <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 relative overflow-hidden">
         <div class="absolute -right-12 -top-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
