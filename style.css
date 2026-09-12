@@ -1,6 +1,5 @@
-/* Custom Styles & Checkerboard for Alpha Visualization */
+/* Custom Styles & Realistic Background Footage Simulation for Alpha Testing */
 
-/* Checkerboard pattern for transparent canvas preview */
 .preview-checkerboard {
   background-color: #0f172a;
   background-image: 
@@ -10,6 +9,18 @@
     linear-gradient(-45deg, transparent 75%, #1e293b 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* Simulated Indoor Studio Room Video Footage */
+.preview-room {
+  background: linear-gradient(180deg, rgba(30, 27, 75, 0.4) 0%, rgba(15, 23, 42, 0.8) 100%),
+              radial-gradient(circle at 30% 20%, #4338ca 0%, #1e1b4b 50%, #090d16 100%) !important;
+}
+
+/* Simulated City / Outdoor Footage */
+.preview-city {
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.3) 0%, rgba(15, 23, 42, 0.85) 100%),
+              radial-gradient(circle at 70% 30%, #0284c7 0%, #0369a1 40%, #082f49 100%) !important;
 }
 
 .preview-dark {
@@ -43,16 +54,6 @@
 /* Range input styling */
 input[type=range] {
   accent-color: #6366f1;
-}
-
-/* Animation utilities */
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-.pulse-fast {
-  animation: pulse-subtle 1.5s infinite;
 }
 
 /* Glass effect */

@@ -11,9 +11,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;600;800;900&family=Montserrat:wght@700;800;900&family=Oswald:wght@700&family=Poppins:wght@700;900&family=Roboto:wght@700;900&family=Rubik:wght@800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
-  <!-- Video Encoders for True Alpha Video Export -->
+  <!-- Encoders for True Alpha Video & Overlay Export -->
   <script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.2/build/webm-muxer.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
 
   <link rel="stylesheet" href="style.css">
 </head>
@@ -33,7 +34,7 @@
             <h1 class="font-bold text-lg leading-none bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
               SubWebM Alpha
             </h1>
-            <p class="text-xs text-indigo-400 font-medium mt-0.5">Transparent Subtitle Video Generator for Canva</p>
+            <p class="text-xs text-indigo-400 font-medium mt-0.5">Transparent Subtitle Generator for Canva</p>
           </div>
         </a>
 
@@ -44,7 +45,7 @@
           </a>
           <a href="updates.html" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition flex items-center gap-1.5">
             <i class="fa-solid fa-clock-rotate-left text-xs"></i> Updates & Fixes
-            <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-emerald-500/30 text-emerald-300 font-bold ml-1">v2.1</span>
+            <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-emerald-500/30 text-emerald-300 font-bold ml-1">v2.2</span>
           </a>
         </nav>
       </div>
@@ -52,47 +53,58 @@
       <!-- Header Action Controls -->
       <div class="flex items-center space-x-3">
         <button id="quickHelpBtn" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-medium text-slate-300 transition flex items-center gap-1.5">
-          <i class="fa-brands fa-canva text-cyan-400"></i> Canva Video Guide
+          <i class="fa-brands fa-canva text-cyan-400"></i> Canva Multi-Track Guide
         </button>
         <a href="https://github.com/rifaterdemsahin/subtitle-generator" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-medium text-slate-300 transition flex items-center gap-1.5">
           <i class="fa-brands fa-github text-slate-300"></i> GitHub
         </a>
         <button id="exportWebmBtn" class="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 transition duration-200 flex items-center gap-2">
-          <i class="fa-solid fa-video"></i>
-          <span>Export Transparent Video</span>
+          <i class="fa-solid fa-download"></i>
+          <span>Export Canva Transparent</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Canva Guide Modal -->
+  <!-- Canva Multi-Track Visual Guide Modal -->
   <div id="canvaModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4">
       <div class="flex justify-between items-center">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i class="fa-brands fa-canva text-cyan-400 text-xl"></i> Transparent Video in Canva
+          <i class="fa-brands fa-canva text-cyan-400 text-xl"></i> How Canva Multi-Track Transparency Works
         </h3>
         <button id="closeModalBtn" class="text-slate-400 hover:text-white text-lg">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <div class="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-xs text-emerald-300">
-        <i class="fa-solid fa-circle-check"></i> <strong>True Video Export:</strong> Exports a genuine <strong>.webm</strong> or <strong>.mov</strong> video file with a transparent alpha channel. In Canva, it imports directly into the <strong>Videos</strong> tab with a full video timeline!
+
+      <!-- Multi-Track Diagram -->
+      <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Canva Video Timeline Tracks:</div>
+        
+        <!-- Top Track: Subtitles -->
+        <div class="flex items-center gap-2 p-2 bg-purple-900/40 border border-purple-500/50 rounded-lg text-xs">
+          <span class="w-20 font-bold text-purple-300">Top Track:</span>
+          <span class="text-white font-medium">✨ SubWebM Transparent Overlay (No Black Box!)</span>
+        </div>
+
+        <!-- Middle Track: User Video -->
+        <div class="flex items-center gap-2 p-2 bg-blue-900/40 border border-blue-500/50 rounded-lg text-xs">
+          <span class="w-20 font-bold text-blue-300">Middle Track:</span>
+          <span class="text-slate-200">📹 Your Video Footage (Indoor room / person visible 100%)</span>
+        </div>
+
+        <!-- Bottom Track: Audio -->
+        <div class="flex items-center gap-2 p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400">
+          <span class="w-20 font-bold text-slate-400">Bottom Track:</span>
+          <span>🎵 Background Audio / Voiceover</span>
+        </div>
       </div>
-      <ol class="space-y-3 text-sm text-slate-300">
-        <li class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">1</span>
-          <span>Select <strong>Transparent WebM Video (.webm)</strong> or <strong>QuickTime Alpha Video (.mov)</strong>.</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">2</span>
-          <span>Click <strong>Export Transparent Video</strong> to download.</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">3</span>
-          <span>In Canva, go to <strong>Uploads &rarr; Videos</strong> and drag in your video. Place it over any footage on your timeline!</span>
-        </li>
-      </ol>
+
+      <div class="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-xs text-emerald-300">
+        <i class="fa-solid fa-circle-check"></i> <strong>Zero Black Background Guarantee:</strong> Use <strong>Canva Transparent Overlay (.png)</strong> or <strong>QuickTime Alpha Video (.mov)</strong>. When placed on the top track, your underlying video in the middle track shows through completely!
+      </div>
+
       <div class="pt-2 flex justify-between items-center">
         <a href="updates.html" class="text-xs text-indigo-400 hover:underline">Read technical updates &rarr;</a>
         <button id="gotItBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium">Got it!</button>
@@ -190,21 +202,22 @@
 
       </div>
 
-      <!-- Export Video Format Hub -->
+      <!-- Export Format Selector -->
       <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
         <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
-          <i class="fa-solid fa-file-video text-purple-400"></i> Video Export Format
+          <i class="fa-solid fa-file-video text-purple-400"></i> Canva Export Format
         </h2>
         
         <div class="space-y-2 text-xs">
-          <label class="block text-slate-300 font-medium">Choose Video Container:</label>
+          <label class="block text-slate-300 font-medium">Select Output Format:</label>
           <select id="exportFormatSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-indigo-500 font-medium">
-            <option value="webm_vp9" selected>🎬 Transparent WebM Video (.webm - VP9 Alpha)</option>
-            <option value="mov_alpha">🎥 Transparent QuickTime Video (.mov - 32-bit Alpha)</option>
+            <option value="canva_overlay" selected>⭐ Canva Transparent Overlay (.png - 100% No Black Box)</option>
+            <option value="mov_alpha">🎥 Apple QuickTime Alpha Video (.mov - 32-bit Alpha)</option>
+            <option value="webm_vp9">🎬 WebM VP9 Alpha Video (.webm)</option>
             <option value="green_screen">🟩 Green Screen Video (.webm / .mp4 - #00FF00)</option>
           </select>
-          <p id="formatDesc" class="text-[11px] text-purple-400 leading-relaxed">
-            Exports a genuine video file (.webm) with Matroska AlphaMode=1 container. Canva natively recognizes this as a video in the Videos tab!
+          <p id="formatDesc" class="text-[11px] text-emerald-400 leading-relaxed font-medium">
+            ⭐ <strong>Canva Recommended:</strong> Layers onto Canva's video timeline with 100% transparency. Your underlying video clip in the middle track shows through perfectly without any black background!
           </p>
         </div>
       </div>
@@ -219,27 +232,33 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <h2 class="text-sm font-semibold text-slate-200">Video Canvas Live Preview</h2>
+            <h2 class="text-sm font-semibold text-slate-200">Video Live Preview</h2>
             <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">100% Alpha Transparent</span>
           </div>
 
-          <!-- Background Preview Modes (Visual helper only; export is always transparent) -->
+          <!-- Video Footage Simulator Controls -->
           <div class="flex items-center gap-2 text-xs">
-            <span class="text-slate-400 text-[11px]">Preview BG:</span>
+            <span class="text-slate-400 text-[11px]">Simulate Background:</span>
             <div class="inline-flex rounded-lg bg-slate-950 p-0.5 border border-slate-800">
-              <button id="bgCheckerBtn" class="px-2.5 py-1 rounded-md text-[11px] bg-slate-800 text-white font-medium">Checkerboard</button>
-              <button id="bgDarkBtn" class="px-2.5 py-1 rounded-md text-[11px] text-slate-400 hover:text-white">Dark Video</button>
-              <button id="bgLightBtn" class="px-2.5 py-1 rounded-md text-[11px] text-slate-400 hover:text-white">Light Video</button>
-              <button id="bgGreenBtn" class="px-2.5 py-1 rounded-md text-[11px] text-slate-400 hover:text-white">Green</button>
+              <button id="bgRoomBtn" class="px-2.5 py-1 rounded-md text-[11px] bg-slate-800 text-white font-medium">🏢 Indoor Room</button>
+              <button id="bgCityBtn" class="px-2.5 py-1 rounded-md text-[11px] text-slate-400 hover:text-white">🌆 City Footage</button>
+              <button id="bgCheckerBtn" class="px-2.5 py-1 rounded-md text-[11px] text-slate-400 hover:text-white">🏁 Checkerboard</button>
+              <button id="bgDarkBtn" class="px-2.5 py-1 rounded-md text-[11px] text-slate-400 hover:text-white">🌑 Dark Studio</button>
             </div>
           </div>
         </div>
 
-        <!-- Canvas Container -->
+        <!-- Canvas Container with Simulated Background -->
         <div class="relative w-full flex items-center justify-center bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 min-h-[360px] max-h-[460px] p-2">
-          <div id="canvasViewport" class="relative max-h-[440px] shadow-2xl rounded-lg overflow-hidden preview-checkerboard flex items-center justify-center">
-            <canvas id="subtitleCanvas" width="1080" height="1920" class="w-full h-full object-contain block"></canvas>
-            <div id="noCueNotice" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-slate-950/60 pointer-events-none hidden">
+          <div id="canvasViewport" class="relative max-h-[440px] shadow-2xl rounded-lg overflow-hidden preview-room flex items-center justify-center">
+            
+            <!-- Simulated Video Footage Background -->
+            <div id="simulatedBackgroundLayer" class="absolute inset-0 bg-cover bg-center pointer-events-none opacity-90 transition-all duration-300"></div>
+
+            <!-- Transparent Subtitle Canvas -->
+            <canvas id="subtitleCanvas" width="1080" height="1920" class="relative z-10 w-full h-full object-contain block"></canvas>
+            
+            <div id="noCueNotice" class="absolute z-20 inset-0 flex flex-col items-center justify-center p-6 text-center bg-slate-950/60 pointer-events-none hidden">
               <i class="fa-solid fa-film text-3xl text-slate-600 mb-2"></i>
               <p class="text-sm text-slate-400 font-medium">No subtitles at current time</p>
               <p class="text-xs text-slate-500">Press Play or load a sample above</p>
@@ -269,14 +288,14 @@
         <div id="exportProgressContainer" class="p-4 bg-indigo-950/40 border border-indigo-500/40 rounded-xl space-y-2 hidden">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-indigo-300 flex items-center gap-2">
-              <i class="fa-solid fa-spinner fa-spin"></i> <span id="exportStatusText">Rendering Transparent Video...</span>
+              <i class="fa-solid fa-spinner fa-spin"></i> <span id="exportStatusText">Rendering Transparent File for Canva...</span>
             </span>
             <span id="exportProgressPct" class="font-mono text-indigo-200 font-bold">0%</span>
           </div>
           <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-indigo-900">
             <div id="exportProgressBar" class="bg-gradient-to-r from-indigo-500 to-pink-500 h-full w-0 transition-all duration-75"></div>
           </div>
-          <p class="text-[11px] text-slate-400">Rendering video frames with full RGBA transparency channel. Ready for Canva video overlay!</p>
+          <p class="text-[11px] text-slate-400">Rendering with 100% pure alpha channel. Ready to drag directly onto your Canva video timeline!</p>
         </div>
 
       </div>

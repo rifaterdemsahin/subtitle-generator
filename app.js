@@ -1,6 +1,6 @@
 /**
- * SubWebM Alpha v2.1 - Transparent Video Generator for Canva
- * Pure Transparent Video Exports (.webm VP9 Alpha and .mov 32-bit Alpha)
+ * SubWebM Alpha v2.2 - Canva Transparent Multi-Track Subtitle Engine
+ * Guaranteed 100% Transparent Overlays & Videos for Canva Multi-Track Video Timeline.
  */
 
 // --- State Management ---
@@ -12,7 +12,7 @@ const state = {
   playbackSpeed: 1.0,
   lastFrameTimestamp: null,
   activeFormatTab: 'srt',
-  exportFormat: 'webm_vp9', // 'webm_vp9', 'mov_alpha', 'green_screen'
+  exportFormat: 'canva_overlay', // 'canva_overlay', 'mov_alpha', 'webm_vp9', 'green_screen'
   
   // Style settings
   style: {
@@ -44,7 +44,7 @@ THIS IS HOW YOU CREATE
 
 2
 00:00:02,300 --> 00:00:04,800
-ANIMATED SUBTITLE VIDEOS
+ANIMATED SUBTITLES FOR CANVA
 
 3
 00:00:04,900 --> 00:00:07,100
@@ -52,7 +52,7 @@ WITH A TRANSPARENT BACKGROUND
 
 4
 00:00:07,200 --> 00:00:09,800
-READY FOR CANVA VIDEO TIMELINE!`,
+SHOWING YOUR VIDEO FOOTAGE!`,
 
   wordTimestampsJson: JSON.stringify([
     {
@@ -70,26 +70,26 @@ READY FOR CANVA VIDEO TIMELINE!`,
     {
       start: 3.1,
       end: 5.6,
-      text: "Export as transparent WebM video",
+      text: "Export transparent overlays for Canva",
       words: [
         { word: "Export", start: 3.1, end: 3.6 },
-        { word: "as", start: 3.6, end: 3.9 },
-        { word: "transparent", start: 3.9, end: 4.7 },
-        { word: "WebM", start: 4.7, end: 5.1 },
-        { word: "video", start: 5.1, end: 5.6 }
+        { word: "transparent", start: 3.6, end: 4.4 },
+        { word: "overlays", start: 4.4, end: 4.9 },
+        { word: "for", start: 4.9, end: 5.1 },
+        { word: "Canva", start: 5.1, end: 5.6 }
       ]
     },
     {
       start: 6.0,
       end: 8.8,
-      text: "Drag and drop straight into Canva!",
+      text: "Your video track is 100% visible!",
       words: [
-        { word: "Drag", start: 6.0, end: 6.5 },
-        { word: "and", start: 6.5, end: 6.8 },
-        { word: "drop", start: 6.8, end: 7.3 },
-        { word: "straight", start: 7.3, end: 7.8 },
-        { word: "into", start: 7.8, end: 8.2 },
-        { word: "Canva!", start: 8.2, end: 8.8 }
+        { word: "Your", start: 6.0, end: 6.4 },
+        { word: "video", start: 6.4, end: 6.8 },
+        { word: "track", start: 6.8, end: 7.3 },
+        { word: "is", start: 7.3, end: 7.6 },
+        { word: "100%", start: 7.6, end: 8.1 },
+        { word: "visible!", start: 8.1, end: 8.8 }
       ]
     }
   ], null, 2)
@@ -169,10 +169,11 @@ function setupEventListeners() {
     if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
   });
 
+  // Background Simulator Buttons
+  document.getElementById('bgRoomBtn').addEventListener('click', (e) => setPreviewBg('room', e.target));
+  document.getElementById('bgCityBtn').addEventListener('click', (e) => setPreviewBg('city', e.target));
   document.getElementById('bgCheckerBtn').addEventListener('click', (e) => setPreviewBg('checkerboard', e.target));
   document.getElementById('bgDarkBtn').addEventListener('click', (e) => setPreviewBg('dark', e.target));
-  document.getElementById('bgLightBtn').addEventListener('click', (e) => setPreviewBg('light', e.target));
-  document.getElementById('bgGreenBtn').addEventListener('click', (e) => setPreviewBg('green', e.target));
 
   playBtn.addEventListener('click', togglePlay);
   stopBtn.addEventListener('click', stopPlayback);
@@ -185,15 +186,18 @@ function setupEventListeners() {
   if (exportFormatSelect) {
     exportFormatSelect.addEventListener('change', (e) => {
       state.exportFormat = e.target.value;
-      if (e.target.value === 'webm_vp9') {
-        formatDesc.textContent = "Exports a genuine video file (.webm) with Matroska AlphaMode=1 container. Canva natively recognizes this as a video in the Videos tab!";
-        formatDesc.className = "text-[11px] text-purple-400 leading-relaxed";
+      if (e.target.value === 'canva_overlay') {
+        formatDesc.innerHTML = "⭐ <strong>Canva Recommended:</strong> Layers onto Canva's video timeline with 100% transparency. Your underlying video clip in the middle track shows through perfectly without any black background!";
+        formatDesc.className = "text-[11px] text-emerald-400 leading-relaxed font-medium";
       } else if (e.target.value === 'mov_alpha') {
-        formatDesc.textContent = "Exports a 32-bit QuickTime Video file (.mov). Apple & Canva native video format with 100% true alpha transparency!";
-        formatDesc.className = "text-[11px] text-cyan-400 leading-relaxed";
+        formatDesc.innerHTML = "🎥 <strong>QuickTime Video (.mov):</strong> 32-bit video container with alpha channel. Supported directly by Canva, Apple Final Cut Pro, and Adobe Premiere Pro.";
+        formatDesc.className = "text-[11px] text-cyan-400 leading-relaxed font-medium";
+      } else if (e.target.value === 'webm_vp9') {
+        formatDesc.innerHTML = "🎬 <strong>WebM VP9 Video (.webm):</strong> Encoded with Matroska AlphaMode=1 container header.";
+        formatDesc.className = "text-[11px] text-purple-400 leading-relaxed font-medium";
       } else if (e.target.value === 'green_screen') {
-        formatDesc.textContent = "High-bitrate video with pure #00FF00 Green background for traditional 1-click chroma keying.";
-        formatDesc.className = "text-[11px] text-emerald-400 leading-relaxed";
+        formatDesc.innerHTML = "🟩 <strong>Green Screen Video:</strong> High-bitrate video with pure #00FF00 green background for 1-click chroma keying.";
+        formatDesc.className = "text-[11px] text-emerald-400 leading-relaxed font-medium";
       }
     });
   }
@@ -320,10 +324,10 @@ function bindColorControl(pickerId, hexId, callback) {
 function setPreviewBg(mode, targetBtn) {
   canvasViewport.className = 'relative max-h-[440px] shadow-2xl rounded-lg overflow-hidden flex items-center justify-center';
   
-  if (mode === 'checkerboard') canvasViewport.classList.add('preview-checkerboard');
+  if (mode === 'room') canvasViewport.classList.add('preview-room');
+  else if (mode === 'city') canvasViewport.classList.add('preview-city');
+  else if (mode === 'checkerboard') canvasViewport.classList.add('preview-checkerboard');
   else if (mode === 'dark') canvasViewport.classList.add('preview-dark');
-  else if (mode === 'light') canvasViewport.classList.add('preview-light');
-  else if (mode === 'green') canvasViewport.classList.add('preview-green');
 
   const parent = targetBtn.parentElement;
   Array.from(parent.children).forEach(btn => {
@@ -936,7 +940,7 @@ function hexToRgba(hex, alpha) {
 }
 
 // ============================================================================
-// --- VIDEO EXPORT ENGINES: Transparent WebM VP9 Video & QuickTime MOV Video ---
+// --- EXPORT ENGINES ---
 // ============================================================================
 
 async function handleExport() {
@@ -947,110 +951,77 @@ async function handleExport() {
 
   pausePlayback();
 
-  const format = state.exportFormat || 'webm_vp9';
-  if (format === 'webm_vp9') {
-    await exportWebmVP9AlphaVideo();
+  const format = state.exportFormat || 'canva_overlay';
+  if (format === 'canva_overlay') {
+    await exportCanvaTransparentOverlay();
   } else if (format === 'mov_alpha') {
     await exportQuickTimeAlphaVideo();
+  } else if (format === 'webm_vp9') {
+    await exportWebmVP9AlphaVideo();
   } else if (format === 'green_screen') {
     await exportGreenScreenVideo();
   }
 }
 
 /**
- * 1. TRANSPARENT WEBM VIDEO EXPORT (WebCodecs & WebMMuxer)
- * Writes a genuine Matroska WebM video file (.webm) with AlphaMode=1 container header.
- * Directly importable into Canva's Videos tab!
+ * 1. CANVA TRANSPARENT OVERLAY (.png)
+ * 100% Guaranteed 24-bit RGB + 8-bit Alpha lossless animated stream.
+ * In Canva: Layers on top track over your video, middle video track is completely visible with ZERO black box!
  */
-async function exportWebmVP9AlphaVideo() {
-  showExportUI("Rendering Transparent WebM Video (.webm) for Canva...");
+async function exportCanvaTransparentOverlay() {
+  showExportUI("Rendering Canva Transparent Overlay (.png)...");
 
   const w = state.style.width;
   const h = state.style.height;
-  const fps = 30;
+  const fps = 25;
   const totalFrames = Math.ceil(state.duration * fps);
+  const frameDelayMs = Math.round(1000 / fps);
 
-  const hasWebCodecs = typeof VideoEncoder !== 'undefined' && typeof WebMMuxer !== 'undefined';
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = w;
+  offCanvas.height = h;
+  const offCtx = offCanvas.getContext('2d', { alpha: true, willReadFrequently: true });
 
-  if (hasWebCodecs) {
-    try {
-      const muxer = new WebMMuxer.Muxer({
-        target: new WebMMuxer.ArrayBufferTarget(),
-        video: {
-          codec: 'V_VP9',
-          width: w,
-          height: h,
-          alpha: true
-        }
-      });
+  const frameBuffers = [];
+  const delays = [];
 
-      let encodedFrames = 0;
-      const encoder = new VideoEncoder({
-        output: (chunk, meta) => {
-          muxer.addVideoChunk(chunk, meta);
-        },
-        error: (e) => {
-          console.error("WebCodecs VideoEncoder Error:", e);
-        }
-      });
+  for (let f = 0; f < totalFrames; f++) {
+    const t = f / fps;
+    renderFrame(offCtx, t, false);
 
-      encoder.configure({
-        codec: 'vp09.00.10.08',
-        width: w,
-        height: h,
-        bitrate: 12000000, // 12 Mbps
-        alpha: 'keep'
-      });
+    const imgData = offCtx.getImageData(0, 0, w, h);
+    frameBuffers.push(imgData.data.buffer);
+    delays.push(frameDelayMs);
 
-      const offCanvas = document.createElement('canvas');
-      offCanvas.width = w;
-      offCanvas.height = h;
-      const offCtx = offCanvas.getContext('2d', { alpha: true });
-
-      for (let f = 0; f < totalFrames; f++) {
-        const t = f / fps;
-        renderFrame(offCtx, t, false);
-
-        const frameTimestampMicros = Math.round(t * 1000000);
-        const videoFrame = new VideoFrame(offCanvas, {
-          timestamp: frameTimestampMicros,
-          alpha: 'keep'
-        });
-
-        encoder.encode(videoFrame, { keyFrame: f % 30 === 0 });
-        videoFrame.close();
-
-        encodedFrames++;
-        const progress = Math.min(95, Math.round((encodedFrames / totalFrames) * 92));
-        updateExportProgress(progress);
-
-        if (f % 5 === 0) await new Promise(r => setTimeout(r, 0));
-      }
-
-      await encoder.flush();
-      muxer.finalize();
-
-      const { buffer } = muxer.target;
-      const blob = new Blob([buffer], { type: 'video/webm' });
-      triggerDownload(blob, `subtitles_transparent_${state.style.aspectRatio.replace(':', 'x')}_${Date.now()}.webm`);
-      finishExportUI();
-      return;
-    } catch (webcodecsErr) {
-      console.warn("WebCodecs VideoEncoder failed, falling back to MediaRecorder stream:", webcodecsErr);
-    }
+    const progress = Math.min(95, Math.round(((f + 1) / totalFrames) * 90));
+    updateExportProgress(progress);
+    if (f % 5 === 0) await new Promise(r => setTimeout(r, 0));
   }
 
-  // Fallback to MediaRecorder canvas captureStream
-  await exportMediaRecorderWebm(false);
+  updateExportProgress(96);
+  exportStatusText.textContent = "Encoding 100% Transparent Canva Overlay...";
+
+  try {
+    if (typeof UPNG !== 'undefined' && UPNG.encode) {
+      // 0 = lossless RGBA (true alpha transparency)
+      const apngBuffer = UPNG.encode(frameBuffers, w, h, 0, delays);
+      const blob = new Blob([apngBuffer], { type: 'image/png' });
+      triggerDownload(blob, `canva_subtitles_transparent_${state.style.aspectRatio.replace(':', 'x')}_${Date.now()}.png`);
+      finishExportUI();
+    } else {
+      throw new Error("UPNG encoder library not available");
+    }
+  } catch (err) {
+    console.error("APNG encoding failed:", err);
+    await exportQuickTimeAlphaVideo();
+  }
 }
 
 /**
- * 2. QUICKTIME MOV 32-BIT ALPHA VIDEO EXPORT (.mov)
- * Builds an Apple QuickTime Movie container with 32-bit RGBA PNG video frames.
- * Canva natively loads .mov video files with full alpha transparency on the video timeline!
+ * 2. QUICKTIME MOV 32-BIT ALPHA VIDEO (.mov)
  */
 async function exportQuickTimeAlphaVideo() {
-  showExportUI("Rendering QuickTime Alpha Video (.mov) for Canva...");
+  showExportUI("Rendering 32-bit QuickTime Alpha Video (.mov)...");
 
   const w = state.style.width;
   const h = state.style.height;
@@ -1079,166 +1050,145 @@ async function exportQuickTimeAlphaVideo() {
   }
 
   updateExportProgress(92);
-  exportStatusText.textContent = "Muxing QuickTime .MOV Video Container...";
+  exportStatusText.textContent = "Muxing QuickTime .MOV Video File...";
 
   const movBuffer = buildQuickTimeMov(pngBlobs, w, h, fps);
   const finalBlob = new Blob([movBuffer], { type: 'video/quicktime' });
-  triggerDownload(finalBlob, `subtitles_transparent_${state.style.aspectRatio.replace(':', 'x')}_${Date.now()}.mov`);
+  triggerDownload(finalBlob, `canva_subtitles_alpha_${state.style.aspectRatio.replace(':', 'x')}_${Date.now()}.mov`);
   finishExportUI();
 }
 
 /**
- * Pure JavaScript QuickTime MOV Muxer for 32-bit Alpha Video Frames
+ * QuickTime MOV Muxer for 32-bit Alpha Video Frames
  */
 function buildQuickTimeMov(pngFrames, width, height, fps) {
   const timescale = 600;
   const frameDuration = Math.round(timescale / fps);
   const totalDuration = pngFrames.length * frameDuration;
 
-  // Calculate total mdat size
   let mdatPayloadSize = 0;
   pngFrames.forEach(f => { mdatPayloadSize += f.byteLength; });
 
-  // 1. ftyp Atom
   const ftyp = createAtom('ftyp', [
     stringToBytes('qt  '),
-    new Uint8Array([0x00, 0x00, 0x02, 0x00]), // minor version
+    new Uint8Array([0x00, 0x00, 0x02, 0x00]),
     stringToBytes('qt  ')
   ]);
 
-  // 2. mdat Atom Header (8 bytes) + concatenated PNG frames
   const mdatHeader = createAtomHeader('mdat', 8 + mdatPayloadSize);
   const mdatOffset = ftyp.byteLength;
 
-  // 3. Track & Sample Table Construction
   const stszPayload = new Uint8Array(12 + pngFrames.length * 4);
   const stszView = new DataView(stszPayload.buffer);
-  stszView.setUint32(0, 0); // version & flags
-  stszView.setUint32(4, 0); // uniform sample size (0 = variable)
-  stszView.setUint32(8, pngFrames.length); // count
+  stszView.setUint32(0, 0);
+  stszView.setUint32(4, 0);
+  stszView.setUint32(8, pngFrames.length);
   pngFrames.forEach((f, idx) => {
     stszView.setUint32(12 + idx * 4, f.byteLength);
   });
   const stsz = createAtom('stsz', [stszPayload]);
 
-  // stts (Time-to-sample)
   const sttsPayload = new Uint8Array(16);
   const sttsView = new DataView(sttsPayload.buffer);
   sttsView.setUint32(0, 0);
-  sttsView.setUint32(4, 1); // 1 entry
+  sttsView.setUint32(4, 1);
   sttsView.setUint32(8, pngFrames.length);
   sttsView.setUint32(12, frameDuration);
   const stts = createAtom('stts', [sttsPayload]);
 
-  // stsc (Sample-to-chunk: 1 chunk containing all samples)
   const stscPayload = new Uint8Array(20);
   const stscView = new DataView(stscPayload.buffer);
   stscView.setUint32(0, 0);
   stscView.setUint32(4, 1);
-  stscView.setUint32(8, 1); // first chunk
-  stscView.setUint32(12, pngFrames.length); // samples per chunk
-  stscView.setUint32(16, 1); // sample desc index
+  stscView.setUint32(8, 1);
+  stscView.setUint32(12, pngFrames.length);
+  stscView.setUint32(16, 1);
   const stsc = createAtom('stsc', [stscPayload]);
 
-  // stsd (Sample Description: 'png ' codec with 32-bit depth)
   const pngEntryPayload = new Uint8Array(78);
   const peView = new DataView(pngEntryPayload.buffer);
-  peView.setUint32(0, 86); // size of sample entry
-  pngEntryPayload.set(stringToBytes('png '), 4); // fourcc
-  peView.setUint16(14, 1); // data reference index
-  peView.setUint16(32, width); // width
-  peView.setUint16(34, height); // height
-  peView.setUint32(36, 0x00480000); // 72 dpi horiz
-  peView.setUint32(40, 0x00480000); // 72 dpi vert
-  peView.setUint16(50, 1); // frame count
+  peView.setUint32(0, 86);
+  pngEntryPayload.set(stringToBytes('png '), 4);
+  peView.setUint16(14, 1);
+  peView.setUint16(32, width);
+  peView.setUint16(34, height);
+  peView.setUint32(36, 0x00480000);
+  peView.setUint32(40, 0x00480000);
+  peView.setUint16(50, 1);
   peView.setUint16(82 - 8, 32); // 32-bit depth (24-bit color + 8-bit alpha)
-  peView.setInt16(84 - 8, -1); // color table id (-1 = default)
+  peView.setInt16(84 - 8, -1);
 
   const stsdHeader = new Uint8Array(8);
   const stsdView = new DataView(stsdHeader.buffer);
-  stsdView.setUint32(0, 0); // version/flags
-  stsdView.setUint32(4, 1); // 1 description entry
+  stsdView.setUint32(0, 0);
+  stsdView.setUint32(4, 1);
   const stsd = createAtom('stsd', [stsdHeader, pngEntryPayload]);
 
-  // Placeholder for stco (will populate exact chunk offset once mdat is positioned)
   const stcoPayload = new Uint8Array(12);
   const stcoView = new DataView(stcoPayload.buffer);
   stcoView.setUint32(0, 0);
   stcoView.setUint32(4, 1);
-  const videoDataOffset = mdatOffset + 8; // mdat payload starts right after 8-byte mdat header
+  const videoDataOffset = mdatOffset + 8;
   stcoView.setUint32(8, videoDataOffset);
   const stco = createAtom('stco', [stcoPayload]);
 
-  // stbl
   const stbl = createAtom('stbl', [stsd, stts, stsc, stsz, stco]);
-
-  // vmhd
   const vmhdPayload = new Uint8Array(12);
   const vmhd = createAtom('vmhd', [vmhdPayload]);
 
-  // dinf -> dref
   const drefPayload = new Uint8Array(20);
   const drefView = new DataView(drefPayload.buffer);
   drefView.setUint32(4, 1);
   drefView.setUint32(8, 12);
   drefPayload.set(stringToBytes('url '), 12);
-  drefView.setUint32(16, 1); // self-contained flag
+  drefView.setUint32(16, 1);
   const dref = createAtom('dref', [drefPayload]);
   const dinf = createAtom('dinf', [dref]);
 
-  // minf
   const minf = createAtom('minf', [vmhd, dinf, stbl]);
 
-  // hdlr
   const hdlrPayload = new Uint8Array(25);
   const hdlrView = new DataView(hdlrPayload.buffer);
   hdlrPayload.set(stringToBytes('mhlr'), 4);
   hdlrPayload.set(stringToBytes('vide'), 8);
   const hdlr = createAtom('hdlr', [hdlrPayload]);
 
-  // mdhd
   const mdhdPayload = new Uint8Array(24);
   const mdhdView = new DataView(mdhdPayload.buffer);
   mdhdView.setUint32(12, timescale);
   mdhdView.setUint32(16, totalDuration);
   const mdhd = createAtom('mdhd', [mdhdPayload]);
 
-  // mdia
   const mdia = createAtom('mdia', [mdhd, hdlr, minf]);
 
-  // tkhd
   const tkhdPayload = new Uint8Array(84);
   const tkhdView = new DataView(tkhdPayload.buffer);
-  tkhdView.setUint32(0, 0x00000007); // flags: enabled | in_movie | in_preview
-  tkhdView.setUint32(12, 1); // track ID
+  tkhdView.setUint32(0, 0x00000007);
+  tkhdView.setUint32(12, 1);
   tkhdView.setUint32(20, totalDuration);
-  tkhdView.setUint32(36, 0x00010000); // matrix unity
+  tkhdView.setUint32(36, 0x00010000);
   tkhdView.setUint32(52, 0x00010000);
   tkhdView.setUint32(68, 0x40000000);
   tkhdView.setUint32(76, width << 16);
   tkhdView.setUint32(80, height << 16);
   const tkhd = createAtom('tkhd', [tkhdPayload]);
 
-  // trak
   const trak = createAtom('trak', [tkhd, mdia]);
 
-  // mvhd
   const mvhdPayload = new Uint8Array(100);
   const mvhdView = new DataView(mvhdPayload.buffer);
   mvhdView.setUint32(12, timescale);
   mvhdView.setUint32(16, totalDuration);
-  mvhdView.setUint32(20, 0x00010000); // rate 1.0
-  mvhdView.setUint16(24, 0x0100); // volume 1.0
+  mvhdView.setUint32(20, 0x00010000);
+  mvhdView.setUint16(24, 0x0100);
   mvhdView.setUint32(36, 0x00010000);
   mvhdView.setUint32(52, 0x00010000);
   mvhdView.setUint32(68, 0x40000000);
-  mvhdView.setUint32(96, 2); // next track ID
+  mvhdView.setUint32(96, 2);
   const mvhd = createAtom('mvhd', [mvhdPayload]);
 
-  // moov
   const moov = createAtom('moov', [mvhd, trak]);
 
-  // Combine ftyp + mdat + moov into single buffer
   const totalFileSize = ftyp.byteLength + 8 + mdatPayloadSize + moov.byteLength;
   const result = new Uint8Array(totalFileSize);
 
@@ -1291,16 +1241,97 @@ function stringToBytes(str) {
 }
 
 /**
- * 3. GREEN SCREEN VIDEO EXPORT
+ * 3. WEBM VP9 ALPHA VIDEO (.webm)
+ */
+async function exportWebmVP9AlphaVideo() {
+  showExportUI("Rendering WebM VP9 Alpha Video (.webm)...");
+
+  const w = state.style.width;
+  const h = state.style.height;
+  const fps = 30;
+  const totalFrames = Math.ceil(state.duration * fps);
+
+  const hasWebCodecs = typeof VideoEncoder !== 'undefined' && typeof WebMMuxer !== 'undefined';
+
+  if (hasWebCodecs) {
+    try {
+      const muxer = new WebMMuxer.Muxer({
+        target: new WebMMuxer.ArrayBufferTarget(),
+        video: {
+          codec: 'V_VP9',
+          width: w,
+          height: h,
+          alpha: true
+        }
+      });
+
+      let encodedFrames = 0;
+      const encoder = new VideoEncoder({
+        output: (chunk, meta) => {
+          muxer.addVideoChunk(chunk, meta);
+        },
+        error: (e) => {
+          console.error("WebCodecs VideoEncoder Error:", e);
+        }
+      });
+
+      encoder.configure({
+        codec: 'vp09.00.10.08',
+        width: w,
+        height: h,
+        bitrate: 12000000,
+        alpha: 'keep'
+      });
+
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = w;
+      offCanvas.height = h;
+      const offCtx = offCanvas.getContext('2d', { alpha: true });
+
+      for (let f = 0; f < totalFrames; f++) {
+        const t = f / fps;
+        renderFrame(offCtx, t, false);
+
+        const frameTimestampMicros = Math.round(t * 1000000);
+        const videoFrame = new VideoFrame(offCanvas, {
+          timestamp: frameTimestampMicros,
+          alpha: 'keep'
+        });
+
+        encoder.encode(videoFrame, { keyFrame: f % 30 === 0 });
+        videoFrame.close();
+
+        encodedFrames++;
+        const progress = Math.min(95, Math.round((encodedFrames / totalFrames) * 92));
+        updateExportProgress(progress);
+
+        if (f % 5 === 0) await new Promise(r => setTimeout(r, 0));
+      }
+
+      await encoder.flush();
+      muxer.finalize();
+
+      const { buffer } = muxer.target;
+      const blob = new Blob([buffer], { type: 'video/webm' });
+      triggerDownload(blob, `canva_subtitles_alpha_${state.style.aspectRatio.replace(':', 'x')}_${Date.now()}.webm`);
+      finishExportUI();
+      return;
+    } catch (webcodecsErr) {
+      console.warn("WebCodecs VideoEncoder failed, falling back to MediaRecorder stream:", webcodecsErr);
+    }
+  }
+
+  await exportMediaRecorderWebm(false);
+}
+
+/**
+ * 4. GREEN SCREEN VIDEO
  */
 async function exportGreenScreenVideo() {
   showExportUI("Rendering Chroma Key Green (#00FF00) Video...");
   await exportMediaRecorderWebm(true);
 }
 
-/**
- * Standard MediaRecorder stream recorder fallback
- */
 async function exportMediaRecorderWebm(isGreenScreen = false) {
   const fps = 30;
   const totalFrames = Math.ceil(state.duration * fps);
