@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subtitle to WebM Alpha Generator | Canva Ready</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for subtitle rendering -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;600;800;900&family=Montserrat:wght@700;800;900&family=Oswald:wght@700&family=Poppins:wght@700;900&family=Roboto:wght@700;900&family=Rubik:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <i class="fa-solid fa-closed-captioning text-white text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-none bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+            SubWebM Alpha
+          </h1>
+          <p class="text-xs text-indigo-400 font-medium mt-0.5">Transparent Subtitle Generator for Canva & Video Editors</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <a href="https://github.com/rifaterdemsahin/subtitle-generator" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-medium text-slate-300 transition flex items-center gap-1.5">
+          <i class="fa-brands fa-github text-slate-300"></i> GitHub
+        </a>
+        <button id="quickHelpBtn" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-medium text-slate-300 transition flex items-center gap-1.5">
+          <i class="fa-brands fa-canva text-cyan-400"></i> Canva Guide
+        </button>
+        <button id="exportWebmBtn" class="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 transition duration-200 flex items-center gap-2">
+          <i class="fa-solid fa-file-video"></i>
+          <span>Export WebM (Alpha)</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Canva Guide Modal -->
+  <div id="canvaModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-brands fa-canva text-cyan-400 text-xl"></i> How to use in Canva
+        </h3>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <ol class="space-y-3 text-sm text-slate-300">
+        <li class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">1</span>
+          <span>Generate and download your transparent <code>.webm</code> subtitle video below.</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">2</span>
+          <span>Open your project in <strong>Canva</strong>. Go to <strong>Uploads &rarr; Videos</strong> and drag your downloaded WebM file in.</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">3</span>
+          <span>Canva automatically preserves the <strong>Alpha Channel (transparency)</strong>. Simply layer the subtitles over any video, image, or background!</span>
+        </li>
+      </ol>
+      <div class="pt-2 flex justify-end">
+        <button id="gotItBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium">Got it!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Left Column: Transcript & Presets (4 cols) -->
+    <div class="lg:col-span-4 space-y-6">
+
+      <!-- Presets Card -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <h2 class="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles text-pink-400"></i> Style Presets
+        </h2>
+        <div class="grid grid-cols-2 gap-2">
+          <button class="preset-btn p-2.5 rounded-xl border border-slate-700/70 bg-slate-800/60 hover:bg-indigo-600/30 hover:border-indigo-500 text-left transition" data-preset="mrbeast">
+            <div class="text-xs font-bold text-yellow-400">🔥 Viral Creator</div>
+            <div class="text-[10px] text-slate-400">Bold Anton, stroke, active word</div>
+          </button>
+          <button class="preset-btn p-2.5 rounded-xl border border-slate-700/70 bg-slate-800/60 hover:bg-indigo-600/30 hover:border-indigo-500 text-left transition" data-preset="minimal">
+            <div class="text-xs font-bold text-white">✨ Clean Modern</div>
+            <div class="text-[10px] text-slate-400">Inter, subtle pill, elegant</div>
+          </button>
+          <button class="preset-btn p-2.5 rounded-xl border border-slate-700/70 bg-slate-800/60 hover:bg-indigo-600/30 hover:border-indigo-500 text-left transition" data-preset="cinema">
+            <div class="text-xs font-bold text-amber-300">🎬 Netflix / Cinema</div>
+            <div class="text-[10px] text-slate-400">Yellow sans-serif with drop shadow</div>
+          </button>
+          <button class="preset-btn p-2.5 rounded-xl border border-slate-700/70 bg-slate-800/60 hover:bg-indigo-600/30 hover:border-indigo-500 text-left transition" data-preset="cyber">
+            <div class="text-xs font-bold text-cyan-400">⚡ Cyber Glow</div>
+            <div class="text-[10px] text-slate-400">Neon cyan glow, Montserrat</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Transcript Input Card -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-align-left text-indigo-400"></i> Transcript / Subtitles
+          </h2>
+          <div class="flex items-center gap-1.5">
+            <button id="sampleSrtBtn" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" title="Load sample SRT">
+              Sample 1
+            </button>
+            <button id="sampleWordBtn" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" title="Load sample with word timestamps">
+              Sample 2
+            </button>
+          </div>
+        </div>
+
+        <!-- Format Selector Tabs -->
+        <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+          <button id="tabSrt" class="flex-1 py-1.5 rounded-lg font-medium transition text-center bg-indigo-600 text-white">SRT / VTT</button>
+          <button id="tabJson" class="flex-1 py-1.5 rounded-lg font-medium transition text-center text-slate-400 hover:text-white">Whisper JSON</button>
+          <button id="tabPlain" class="flex-1 py-1.5 rounded-lg font-medium transition text-center text-slate-400 hover:text-white">Plain Text</button>
+        </div>
+
+        <!-- File Dropzone -->
+        <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-center cursor-pointer transition bg-slate-950/40">
+          <input type="file" id="fileInput" accept=".srt,.vtt,.json,.txt" class="hidden">
+          <i class="fa-solid fa-cloud-arrow-up text-slate-400 text-lg mb-1"></i>
+          <p class="text-xs text-slate-300">Drop your <strong>.srt, .vtt, .json</strong> here or <span class="text-indigo-400 underline">browse</span></p>
+        </div>
+
+        <!-- Text Area -->
+        <div class="relative">
+          <textarea id="transcriptInput" rows="7" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition resize-y" placeholder="Paste your SRT, VTT, or JSON transcript here..."></textarea>
+          <div id="parseStatus" class="mt-1 text-[11px] text-slate-400 flex items-center justify-between">
+            <span id="cueCountLabel">0 cues detected</span>
+            <button id="clearTranscriptBtn" class="hover:text-red-400 text-slate-500 transition">Clear</button>
+          </div>
+        </div>
+
+        <!-- Auto Split Options for Plain Text -->
+        <div id="plainTextControls" class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-2 hidden">
+          <div class="text-xs font-medium text-slate-300">Auto Timing Generator</div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">Words per chunk</label>
+              <input type="number" id="wordsPerChunk" value="3" min="1" max="15" class="w-full bg-slate-900 border border-slate-750 rounded p-1.5 text-xs text-white">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">Duration per word (sec)</label>
+              <input type="number" id="secPerWord" value="0.35" step="0.05" min="0.1" class="w-full bg-slate-900 border border-slate-750 rounded p-1.5 text-xs text-white">
+            </div>
+          </div>
+          <button id="generateAutoTimingsBtn" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded text-xs font-semibold transition">
+            Generate Timestamps
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Center & Right Column: Preview & Styling (8 cols) -->
+    <div class="lg:col-span-8 space-y-6">
+
+      <!-- Live Preview Canvas Card -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <h2 class="text-sm font-semibold text-slate-200">Canvas Live Preview</h2>
+            <span class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Alpha / Transparent WebM</span>
+          </div>
+
+          <!-- Background Preview Modes (Visual helper only; export is always transparent) -->
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-slate-400 text-[11px]">Preview BG:</span>
+            <div class="inline-flex rounded-lg bg-slate-950 p-0.5 border border-slate-800">
+              <button id="bgCheckerBtn" class="px-2.5 py-1 rounded-md text-[11px] bg-slate-800 text-white font-medium">Checkerboard</button>
+              <button id="bgDarkBtn" class="px-2.5 py-1 rounded-md text-[11px] text-slate-400 hover:text-white">Dark Video</button>
+              <button id="bgLightBtn" class="px-2.5 py-1 rounded-md text-[11px] text-slate-400 hover:text-white">Light Video</button>
+              <button id="bgGreenBtn" class="px-2.5 py-1 rounded-md text-[11px] text-slate-400 hover:text-white">Green</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="relative w-full flex items-center justify-center bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 min-h-[360px] max-h-[460px] p-2">
+          <div id="canvasViewport" class="relative max-h-[440px] shadow-2xl rounded-lg overflow-hidden preview-checkerboard flex items-center justify-center">
+            <canvas id="subtitleCanvas" width="1080" height="1920" class="w-full h-full object-contain block"></canvas>
+            <div id="noCueNotice" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-slate-950/60 pointer-events-none hidden">
+              <i class="fa-solid fa-film text-3xl text-slate-600 mb-2"></i>
+              <p class="text-sm text-slate-400 font-medium">No subtitles at current time</p>
+              <p class="text-xs text-slate-500">Press Play or load a sample above</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Player Controls & Timeline -->
+        <div class="space-y-2 bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+          <div class="flex items-center gap-3">
+            <button id="playBtn" class="w-9 h-9 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition shadow">
+              <i class="fa-solid fa-play text-xs"></i>
+            </button>
+            <button id="stopBtn" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">
+              <i class="fa-solid fa-stop text-xs"></i>
+            </button>
+            <div class="flex-1 flex items-center gap-2">
+              <input type="range" id="timeScrubber" min="0" max="10" step="0.01" value="0" class="w-full accent-indigo-500 cursor-pointer h-2 bg-slate-800 rounded-lg">
+            </div>
+            <div class="text-xs font-mono text-slate-300 min-w-[90px] text-right">
+              <span id="currentTimeLabel">00:00.0</span> / <span id="totalTimeLabel">00:00.0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Progress / Rendering Overlay -->
+        <div id="exportProgressContainer" class="p-4 bg-indigo-950/40 border border-indigo-500/40 rounded-xl space-y-2 hidden">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-indigo-300 flex items-center gap-2">
+              <i class="fa-solid fa-spinner fa-spin"></i> Rendering Transparent WebM Video...
+            </span>
+            <span id="exportProgressPct" class="font-mono text-indigo-200 font-bold">0%</span>
+          </div>
+          <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-indigo-900">
+            <div id="exportProgressBar" class="bg-gradient-to-r from-indigo-500 to-pink-500 h-full w-0 transition-all duration-75"></div>
+          </div>
+          <p class="text-[11px] text-slate-400">Capturing RGBA alpha frames directly. Ready for Canva drag-and-drop upon completion!</p>
+        </div>
+
+      </div>
+
+      <!-- Styling & Customization Accordions / Grid -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-5">
+        <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
+          <i class="fa-solid fa-sliders text-purple-400"></i> Subtitle Styling & Layout
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+
+          <!-- Aspect Ratio & Resolution -->
+          <div class="space-y-1.5">
+            <label class="text-slate-300 font-medium block">Aspect Ratio / Size</label>
+            <select id="aspectRatioSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="9:16">9:16 Vertical (1080x1920 - Shorts/Reels)</option>
+              <option value="16:9">16:9 Landscape (1920x1080 - YouTube)</option>
+              <option value="1:1">1:1 Square (1080x1080 - Post)</option>
+              <option value="4:5">4:5 Portrait (1080x1350 - Instagram)</option>
+            </select>
+          </div>
+
+          <!-- Font Family -->
+          <div class="space-y-1.5">
+            <label class="text-slate-300 font-medium block">Font Family</label>
+            <select id="fontFamilySelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="Anton" selected>Anton (Impactful / TikTok)</option>
+              <option value="Montserrat">Montserrat (Modern Heavy)</option>
+              <option value="Inter">Inter (Clean / Tech)</option>
+              <option value="Poppins">Poppins (Friendly Bold)</option>
+              <option value="Bebas Neue">Bebas Neue (Tall / Cinematic)</option>
+              <option value="Rubik">Rubik (Punchy)</option>
+              <option value="Oswald">Oswald (Condensed)</option>
+              <option value="Roboto">Roboto (Classic)</option>
+            </select>
+          </div>
+
+          <!-- Animation Mode -->
+          <div class="space-y-1.5">
+            <label class="text-slate-300 font-medium block">Word Animation</label>
+            <select id="animationModeSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="karaoke" selected>Karaoke (Active Word Highlight)</option>
+              <option value="pop">Pop-In Scale</option>
+              <option value="fade">Smooth Fade In</option>
+              <option value="static">Clean Static (No animation)</option>
+            </select>
+          </div>
+
+          <!-- Font Size Slider -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between">
+              <label class="text-slate-300 font-medium">Font Size</label>
+              <span id="fontSizeVal" class="text-slate-400 font-mono">72px</span>
+            </div>
+            <input type="range" id="fontSizeSlider" min="28" max="140" value="72" class="w-full accent-indigo-500">
+          </div>
+
+          <!-- Position Offset Y Slider -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between">
+              <label class="text-slate-300 font-medium">Vertical Position</label>
+              <span id="posYVal" class="text-slate-400 font-mono">80%</span>
+            </div>
+            <input type="range" id="posYSlider" min="10" max="95" value="80" class="w-full accent-indigo-500">
+          </div>
+
+          <!-- Text Case -->
+          <div class="space-y-1.5">
+            <label class="text-slate-300 font-medium block">Text Case</label>
+            <select id="textCaseSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="uppercase" selected>ALL UPPERCASE</option>
+              <option value="original">Original As-is</option>
+              <option value="lowercase">all lowercase</option>
+              <option value="title">Title Case</option>
+            </select>
+          </div>
+
+          <!-- Primary Text Color -->
+          <div class="space-y-1.5">
+            <label class="text-slate-300 font-medium block">Text Color</label>
+            <div class="flex items-center gap-2">
+              <input type="color" id="primaryColorInput" value="#FFFFFF" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
+              <input type="text" id="primaryColorHex" value="#FFFFFF" class="flex-1 bg-slate-950 border border-slate-800 rounded p-1.5 font-mono text-xs text-white">
+            </div>
+          </div>
+
+          <!-- Active Word / Highlight Color -->
+          <div class="space-y-1.5">
+            <label class="text-slate-300 font-medium block">Active Highlight Color</label>
+            <div class="flex items-center gap-2">
+              <input type="color" id="highlightColorInput" value="#FFDF00" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
+              <input type="text" id="highlightColorHex" value="#FFDF00" class="flex-1 bg-slate-950 border border-slate-800 rounded p-1.5 font-mono text-xs text-white">
+            </div>
+          </div>
+
+          <!-- Stroke / Outline Width & Color -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between">
+              <label class="text-slate-300 font-medium">Text Stroke / Outline</label>
+              <span id="strokeWidthVal" class="text-slate-400 font-mono">12px</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="color" id="strokeColorInput" value="#000000" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
+              <input type="range" id="strokeWidthSlider" min="0" max="30" value="12" class="flex-1 accent-indigo-500">
+            </div>
+          </div>
+
+          <!-- Shadow / Glow -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between">
+              <label class="text-slate-300 font-medium">Drop Shadow / Glow</label>
+              <span id="shadowBlurVal" class="text-slate-400 font-mono">16px</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="color" id="shadowColorInput" value="#000000" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
+              <input type="range" id="shadowBlurSlider" min="0" max="40" value="16" class="flex-1 accent-indigo-500">
+            </div>
+          </div>
+
+          <!-- Background Box / Pill Opacity -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between">
+              <label class="text-slate-300 font-medium">Background Pill</label>
+              <span id="bgOpacityVal" class="text-slate-400 font-mono">0%</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="color" id="bgColorInput" value="#000000" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
+              <input type="range" id="bgOpacitySlider" min="0" max="100" value="0" class="flex-1 accent-indigo-500">
+            </div>
+          </div>
+
+          <!-- Max Words Per Line -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between">
+              <label class="text-slate-300 font-medium">Max Words per Line</label>
+              <span id="maxWordsVal" class="text-slate-400 font-mono">4</span>
+            </div>
+            <input type="range" id="maxWordsSlider" min="1" max="10" value="4" class="w-full accent-indigo-500">
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-slate-800/80 bg-slate-950 py-4 px-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>SubWebM Alpha Generator &bull; Designed for Canva, Premiere, Final Cut & DaVinci</div>
+      <div class="text-indigo-400 font-mono">Transparent WebM VP9/VP8 Alpha Engine</div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
