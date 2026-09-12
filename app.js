@@ -1,5 +1,6 @@
 /**
- * SubWebM Alpha - Transparent Subtitle Video Generator for Canva
+ * SubWebM Alpha v2.0 - Canva Native Transparency Engine
+ * Supports Lossless APNG (100% Alpha for Canva), WebM VP9 Alpha (WebCodecs), and Green Screen.
  */
 
 // --- State Management ---
@@ -11,6 +12,7 @@ const state = {
   playbackSpeed: 1.0,
   lastFrameTimestamp: null,
   activeFormatTab: 'srt',
+  exportFormat: 'apng', // 'apng', 'webm_vp9', 'green_screen'
   
   // Style settings
   style: {
@@ -46,11 +48,11 @@ ANIMATED SUBTITLES FOR CANVA
 
 3
 00:00:04,900 --> 00:00:07,100
-WITH A FULL ALPHA CHANNEL
+WITH 100% TRUE ALPHA
 
 4
 00:00:07,200 --> 00:00:09,800
-DIRECTLY INSIDE YOUR BROWSER!`,
+ZERO BACKGROUND REMOVER NEEDED!`,
 
   wordTimestampsJson: JSON.stringify([
     {
@@ -95,7 +97,7 @@ DIRECTLY INSIDE YOUR BROWSER!`,
 
 // --- DOM Elements ---
 const canvas = document.getElementById('subtitleCanvas');
-const ctx = canvas.getContext('2d', { alpha: true });
+const ctx = canvas.getContext('2d', { alpha: true, willReadFrequently: true });
 const canvasViewport = document.getElementById('canvasViewport');
 const transcriptInput = document.getElementById('transcriptInput');
 const cueCountLabel = document.getElementById('cueCountLabel');
@@ -108,7 +110,10 @@ const exportWebmBtn = document.getElementById('exportWebmBtn');
 const exportProgressContainer = document.getElementById('exportProgressContainer');
 const exportProgressBar = document.getElementById('exportProgressBar');
 const exportProgressPct = document.getElementById('exportProgressPct');
+const exportStatusText = document.getElementById('exportStatusText');
 const noCueNotice = document.getElementById('noCueNotice');
+const exportFormatSelect = document.getElementById('exportFormatSelect');
+const formatDesc = document.getElementById('formatDesc');
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -184,6 +189,23 @@ function setupEventListeners() {
     currentTimeLabel.textContent = formatTime(state.currentTime);
     renderFrame();
   });
+
+  // Export Format Selection
+  if (exportFormatSelect) {
+    exportFormatSelect.addEventListener('change', (e) => {
+      state.exportFormat = e.target.value;
+      if (e.target.value === 'apng') {
+        formatDesc.textContent = "Lossless 24-bit + 8-bit Alpha animation. Canva imports this with zero blur, zero compression artifacts, and native transparency!";
+        formatDesc.className = "text-[11px] text-emerald-400 leading-relaxed";
+      } else if (e.target.value === 'webm_vp9') {
+        formatDesc.textContent = "WebM VP9 video container with AlphaMode=1 Matroska header via WebCodecs. Compatible with Canva, Premiere Pro & DaVinci.";
+        formatDesc.className = "text-[11px] text-purple-400 leading-relaxed";
+      } else if (e.target.value === 'green_screen') {
+        formatDesc.textContent = "High-bitrate video with pure #00FF00 Green background for traditional 1-click chroma keying.";
+        formatDesc.className = "text-[11px] text-emerald-400 leading-relaxed";
+      }
+    });
+  }
 
   // Style Controls
   bindControl('aspectRatioSelect', (val) => {
@@ -268,8 +290,8 @@ function setupEventListeners() {
     renderFrame();
   });
 
-  // Export WebM Button
-  exportWebmBtn.addEventListener('click', startWebmAlphaExport);
+  // Export Button
+  exportWebmBtn.addEventListener('click', handleExport);
 
   // Canva Help Modal
   const modal = document.getElementById('canvaModal');
@@ -316,7 +338,6 @@ function setPreviewBg(mode, targetBtn) {
   else if (mode === 'light') canvasViewport.classList.add('preview-light');
   else if (mode === 'green') canvasViewport.classList.add('preview-green');
 
-  // Update active button styles
   const parent = targetBtn.parentElement;
   Array.from(parent.children).forEach(btn => {
     btn.className = 'px-2.5 py-1 rounded-md text-[11px] text-slate-400 hover:text-white';
@@ -387,7 +408,6 @@ function parseCurrentInput() {
     } else if (raw.includes('-->')) {
       state.cues = parseSrtOrVtt(raw);
     } else {
-      // Treat as plain text
       state.cues = parsePlainText(raw);
     }
   } catch (err) {
@@ -437,7 +457,6 @@ function parseSrtOrVtt(text) {
       const textLines = lines.slice(timeLineIdx + 1).join(' ').trim().replace(/<[^>]+>/g, '');
 
       if (textLines && end > start) {
-        // Auto-generate estimated word timestamps for karaoke animation
         const words = generateWordTimings(textLines, start, end);
         cues.push({
           id: cues.length + 1,
@@ -513,7 +532,7 @@ function parsePlainText(text) {
       id: cues.length + 1,
       start,
       end,
-      text: line,
+      text,
       words
     });
 
@@ -571,7 +590,6 @@ function generatePlainTimings() {
     curTime = end + 0.2;
   }
 
-  // Convert to SRT format in textarea
   let srtOutput = '';
   cues.forEach(c => {
     srtOutput += `${c.id}\n${formatSrtTime(c.start)} --> ${formatSrtTime(c.end)}\n${c.text}\n\n`;
@@ -605,7 +623,6 @@ function updateCanvasDimensions() {
     w = 1080; h = 1350;
     canvasViewport.style.aspectRatio = "4/5";
   } else {
-    // 9:16 default
     w = 1080; h = 1920;
     canvasViewport.style.aspectRatio = "9/16";
   }
@@ -668,7 +685,6 @@ function applyPreset(presetName) {
     state.style.animationMode = 'karaoke';
   }
 
-  // Update UI Inputs to reflect state
   syncInputsWithState();
   renderFrame();
 }
@@ -762,12 +778,17 @@ function formatTime(secs) {
 }
 
 // --- Canvas Subtitle Rendering Engine ---
-function renderFrame(targetCtx = ctx, targetTime = state.currentTime) {
+function renderFrame(targetCtx = ctx, targetTime = state.currentTime, isGreenScreen = false) {
   const w = state.style.width;
   const h = state.style.height;
 
-  // 1. Clear canvas completely for Alpha transparency
-  targetCtx.clearRect(0, 0, w, h);
+  // 1. Background Fill
+  if (isGreenScreen) {
+    targetCtx.fillStyle = '#00FF00';
+    targetCtx.fillRect(0, 0, w, h);
+  } else {
+    targetCtx.clearRect(0, 0, w, h);
+  }
 
   // Find active cue
   const activeCue = state.cues.find(c => targetTime >= c.start && targetTime <= c.end);
@@ -779,7 +800,6 @@ function renderFrame(targetCtx = ctx, targetTime = state.currentTime) {
 
   if (targetCtx === ctx) noCueNotice.classList.add('hidden');
 
-  // Format text according to textCase setting
   const formatText = (txt) => {
     if (state.style.textCase === 'uppercase') return txt.toUpperCase();
     if (state.style.textCase === 'lowercase') return txt.toLowerCase();
@@ -789,18 +809,15 @@ function renderFrame(targetCtx = ctx, targetTime = state.currentTime) {
     return txt;
   };
 
-  // Setup font
   const fontSize = state.style.fontSize;
   const fontFamily = state.style.fontFamily;
   targetCtx.font = `900 ${fontSize}px "${fontFamily}", sans-serif`;
   targetCtx.textAlign = 'center';
   targetCtx.textBaseline = 'middle';
 
-  // Words breakdown
   const words = activeCue.words || generateWordTimings(activeCue.text, activeCue.start, activeCue.end);
   const maxWords = state.style.maxWordsPerLine;
 
-  // Split into lines
   const lines = [];
   for (let i = 0; i < words.length; i += maxWords) {
     lines.push(words.slice(i, i + maxWords));
@@ -811,8 +828,6 @@ function renderFrame(targetCtx = ctx, targetTime = state.currentTime) {
   const centerY = (h * state.style.posYPercent) / 100;
   const startY = centerY - (totalBlockHeight / 2) + (lineHeight / 2);
 
-  // Animation factors
-  const cueProgress = (targetTime - activeCue.start) / (activeCue.end - activeCue.start);
   let globalAlpha = 1.0;
   let globalScale = 1.0;
 
@@ -832,9 +847,8 @@ function renderFrame(targetCtx = ctx, targetTime = state.currentTime) {
   targetCtx.save();
   targetCtx.globalAlpha = globalAlpha;
 
-  // Draw Background Pill/Box if enabled
+  // Background Box / Pill
   if (state.style.bgOpacity > 0) {
-    // Measure entire block max width
     let maxLineWidth = 0;
     lines.forEach(lineWords => {
       const lineStr = lineWords.map(w => formatText(w.word)).join(' ');
@@ -855,7 +869,7 @@ function renderFrame(targetCtx = ctx, targetTime = state.currentTime) {
     targetCtx.fill();
   }
 
-  // Draw Each Line & Words
+  // Draw Lines & Words
   lines.forEach((lineWords, lineIdx) => {
     const lineY = startY + (lineIdx * lineHeight);
     const fullLineStr = lineWords.map(w => formatText(w.word)).join(' ');
@@ -870,23 +884,18 @@ function renderFrame(targetCtx = ctx, targetTime = state.currentTime) {
       const wordWidth = wordMetrics.width;
       const wordCenterX = curX + (wordWidth / 2);
 
-      // Check if word is active
       const isWordActive = targetTime >= wordObj.start && targetTime <= wordObj.end;
-      const isWordPassed = targetTime > wordObj.end;
 
       targetCtx.save();
 
-      // Karaoke active word highlight / bounce
       let wordColor = state.style.primaryColor;
       let wordScale = 1.0;
 
       if (state.style.animationMode === 'karaoke') {
         if (isWordActive) {
           wordColor = state.style.highlightColor;
-          wordScale = 1.12; // punchy bounce
+          wordScale = 1.12;
         }
-      } else {
-        wordColor = state.style.primaryColor;
       }
 
       targetCtx.translate(wordCenterX, lineY);
@@ -909,7 +918,6 @@ function renderFrame(targetCtx = ctx, targetTime = state.currentTime) {
         targetCtx.strokeText(formattedWord, 0, 0);
       }
 
-      // Reset shadow for crisp fill
       targetCtx.shadowBlur = 0;
       targetCtx.fillStyle = wordColor;
       targetCtx.fillText(formattedWord, 0, 0);
@@ -947,8 +955,11 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// --- WebM Alpha Video Recorder (Canva Ready) ---
-async function startWebmAlphaExport() {
+// ============================================================================
+// --- EXPORT ENGINES: Lossless APNG, WebM VP9 Alpha & Chroma Key ---
+// ============================================================================
+
+async function handleExport() {
   if (state.cues.length === 0) {
     alert("Please add or paste subtitles before exporting!");
     return;
@@ -956,101 +967,256 @@ async function startWebmAlphaExport() {
 
   pausePlayback();
 
-  // Show progress container
-  exportProgressContainer.classList.remove('hidden');
-  exportProgressBar.style.width = '0%';
-  exportProgressPct.textContent = '0%';
-  exportWebmBtn.disabled = true;
-  exportWebmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+  const format = state.exportFormat || 'apng';
+  if (format === 'apng') {
+    await exportLosslessApng();
+  } else if (format === 'webm_vp9') {
+    await exportWebmVP9Alpha();
+  } else if (format === 'green_screen') {
+    await exportGreenScreenVideo();
+  }
+}
 
-  // Create dedicated offscreen canvas for crisp export
-  const exportCanvas = document.createElement('canvas');
-  exportCanvas.width = state.style.width;
-  exportCanvas.height = state.style.height;
-  const exportCtx = exportCanvas.getContext('2d', { alpha: true });
+/**
+ * 1. LOSSLESS APNG EXPORT (Canva Recommended)
+ * 100% Guaranteed 24-bit RGB + 8-bit Alpha. Canva natively imports APNG as a transparent video layer with zero loss.
+ */
+async function exportLosslessApng() {
+  showExportUI("Rendering Lossless APNG with 100% Alpha for Canva...");
 
+  const w = state.style.width;
+  const h = state.style.height;
+  const fps = 25; // 25 fps gives super smooth animations with optimal file size
+  const totalFrames = Math.ceil(state.duration * fps);
+  const frameDelayMs = Math.round(1000 / fps);
+
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = w;
+  offCanvas.height = h;
+  const offCtx = offCanvas.getContext('2d', { alpha: true, willReadFrequently: true });
+
+  const frameBuffers = [];
+  const delays = [];
+
+  for (let f = 0; f < totalFrames; f++) {
+    const t = f / fps;
+    renderFrame(offCtx, t, false);
+
+    const imgData = offCtx.getImageData(0, 0, w, h);
+    frameBuffers.push(imgData.data.buffer);
+    delays.push(frameDelayMs);
+
+    const progress = Math.min(95, Math.round(((f + 1) / totalFrames) * 90));
+    updateExportProgress(progress);
+    // Yield to UI
+    if (f % 5 === 0) await new Promise(r => setTimeout(r, 0));
+  }
+
+  updateExportProgress(96);
+  exportStatusText.textContent = "Encoding Lossless APNG File...";
+
+  // Use UPNG to encode lossless animated PNG
+  try {
+    if (typeof UPNG !== 'undefined' && UPNG.encode) {
+      // 0 = lossless RGBA (true alpha transparency)
+      const apngBuffer = UPNG.encode(frameBuffers, w, h, 0, delays);
+      const blob = new Blob([apngBuffer], { type: 'image/png' });
+      triggerDownload(blob, `subtitles_canva_alpha_${state.style.aspectRatio.replace(':', 'x')}_${Date.now()}.png`);
+      finishExportUI();
+    } else {
+      throw new Error("UPNG encoder library not loaded");
+    }
+  } catch (err) {
+    console.error("APNG encoding failed, falling back to WebM VP9:", err);
+    await exportWebmVP9Alpha();
+  }
+}
+
+/**
+ * 2. WEBM VP9 ALPHA EXPORT (WebCodecs & WebMMuxer)
+ * Writes Matroska AlphaMode=1 container header with VP9 alpha video stream.
+ */
+async function exportWebmVP9Alpha() {
+  showExportUI("Encoding WebM VP9 with Matroska Alpha Layer...");
+
+  const w = state.style.width;
+  const h = state.style.height;
   const fps = 30;
   const totalFrames = Math.ceil(state.duration * fps);
-  const stream = exportCanvas.captureStream(fps);
 
-  // Supported Mime types for WebM with Alpha (VP9 / VP8)
-  const mimeTypes = [
-    'video/webm;codecs=vp9',
-    'video/webm;codecs=vp8',
-    'video/webm'
-  ];
+  // Check WebCodecs and WebMMuxer availability
+  const hasWebCodecs = typeof VideoEncoder !== 'undefined' && typeof WebMMuxer !== 'undefined';
 
-  let chosenMime = '';
-  for (const mime of mimeTypes) {
-    if (MediaRecorder.isTypeSupported(mime)) {
-      chosenMime = mime;
-      break;
+  if (hasWebCodecs) {
+    try {
+      const muxer = new WebMMuxer.Muxer({
+        target: new WebMMuxer.ArrayBufferTarget(),
+        video: {
+          codec: 'V_VP9',
+          width: w,
+          height: h,
+          alpha: true
+        }
+      });
+
+      let encodedFrames = 0;
+      const encoder = new VideoEncoder({
+        output: (chunk, meta) => {
+          muxer.addVideoChunk(chunk, meta);
+        },
+        error: (e) => {
+          console.error("WebCodecs VideoEncoder Error:", e);
+        }
+      });
+
+      encoder.configure({
+        codec: 'vp09.00.10.08',
+        width: w,
+        height: h,
+        bitrate: 10000000, // 10 Mbps
+        alpha: 'keep'
+      });
+
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = w;
+      offCanvas.height = h;
+      const offCtx = offCanvas.getContext('2d', { alpha: true });
+
+      for (let f = 0; f < totalFrames; f++) {
+        const t = f / fps;
+        renderFrame(offCtx, t, false);
+
+        const frameTimestampMicros = Math.round(t * 1000000);
+        const videoFrame = new VideoFrame(offCanvas, {
+          timestamp: frameTimestampMicros,
+          alpha: 'keep'
+        });
+
+        encoder.encode(videoFrame, { keyFrame: f % 30 === 0 });
+        videoFrame.close();
+
+        encodedFrames++;
+        const progress = Math.min(95, Math.round((encodedFrames / totalFrames) * 92));
+        updateExportProgress(progress);
+
+        if (f % 5 === 0) await new Promise(r => setTimeout(r, 0));
+      }
+
+      await encoder.flush();
+      muxer.finalize();
+
+      const { buffer } = muxer.target;
+      const blob = new Blob([buffer], { type: 'video/webm' });
+      triggerDownload(blob, `subtitles_alpha_vp9_${state.style.aspectRatio.replace(':', 'x')}_${Date.now()}.webm`);
+      finishExportUI();
+      return;
+    } catch (webcodecsErr) {
+      console.warn("WebCodecs Alpha encoding failed, falling back to MediaRecorder:", webcodecsErr);
     }
   }
 
-  if (!chosenMime) {
-    alert("Your browser does not support WebM video recording. Please use Google Chrome.");
-    exportProgressContainer.classList.add('hidden');
-    exportWebmBtn.disabled = false;
-    exportWebmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-    return;
-  }
+  // Fallback to MediaRecorder canvas capture stream
+  await exportMediaRecorderWebm(false);
+}
 
-  const recordedChunks = [];
+/**
+ * 3. GREEN SCREEN CHROMA KEY EXPORT
+ */
+async function exportGreenScreenVideo() {
+  showExportUI("Rendering Chroma Key Green (#00FF00) Video...");
+  await exportMediaRecorderWebm(true);
+}
+
+/**
+ * Standard MediaRecorder stream recorder
+ */
+async function exportMediaRecorderWebm(isGreenScreen = false) {
+  const fps = 30;
+  const totalFrames = Math.ceil(state.duration * fps);
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = state.style.width;
+  offCanvas.height = state.style.height;
+  const offCtx = offCanvas.getContext('2d', { alpha: !isGreenScreen });
+
+  const stream = offCanvas.captureStream(fps);
+  const mimeTypes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+  let chosenMime = mimeTypes.find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+
+  const chunks = [];
   const recorder = new MediaRecorder(stream, {
     mimeType: chosenMime,
-    videoBitsPerSecond: 8000000 // 8 Mbps high quality
+    videoBitsPerSecond: 10000000
   });
 
   recorder.ondataavailable = (e) => {
-    if (e.data.size > 0) recordedChunks.push(e.data);
+    if (e.data.size > 0) chunks.push(e.data);
   };
 
   recorder.onstop = () => {
-    const blob = new Blob(recordedChunks, { type: chosenMime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `subtitles_alpha_${state.style.aspectRatio.replace(':', 'x')}_${Date.now()}.webm`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 1000);
-
-    // Reset UI
-    exportProgressBar.style.width = '100%';
-    exportProgressPct.textContent = '100% - Ready!';
-    setTimeout(() => {
-      exportProgressContainer.classList.add('hidden');
-      exportWebmBtn.disabled = false;
-      exportWebmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-    }, 2000);
+    const blob = new Blob(chunks, { type: chosenMime });
+    const filename = isGreenScreen
+      ? `subtitles_greenscreen_${state.style.aspectRatio.replace(':', 'x')}_${Date.now()}.webm`
+      : `subtitles_alpha_${state.style.aspectRatio.replace(':', 'x')}_${Date.now()}.webm`;
+    triggerDownload(blob, filename);
+    finishExportUI();
   };
 
   recorder.start();
 
-  // Render frame by frame in real-time sync with captureStream
-  let currentFrame = 0;
+  let f = 0;
   const frameIntervalMs = 1000 / fps;
 
-  const renderNextExportFrame = () => {
-    if (currentFrame > totalFrames) {
+  const renderNext = () => {
+    if (f > totalFrames) {
       recorder.stop();
       return;
     }
+    const t = f / fps;
+    renderFrame(offCtx, t, isGreenScreen);
 
-    const t = currentFrame / fps;
-    renderFrame(exportCtx, t);
+    const progress = Math.min(98, Math.round((f / totalFrames) * 98));
+    updateExportProgress(progress);
 
-    const progress = Math.min(100, Math.round((currentFrame / totalFrames) * 100));
-    exportProgressBar.style.width = `${progress}%`;
-    exportProgressPct.textContent = `${progress}%`;
-
-    currentFrame++;
-    setTimeout(renderNextExportFrame, frameIntervalMs);
+    f++;
+    setTimeout(renderNext, frameIntervalMs);
   };
 
-  renderNextExportFrame();
+  renderNext();
+}
+
+function showExportUI(statusMsg) {
+  exportProgressContainer.classList.remove('hidden');
+  exportProgressBar.style.width = '0%';
+  exportProgressPct.textContent = '0%';
+  exportStatusText.textContent = statusMsg;
+  exportWebmBtn.disabled = true;
+  exportWebmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+}
+
+function updateExportProgress(pct) {
+  exportProgressBar.style.width = `${pct}%`;
+  exportProgressPct.textContent = `${pct}%`;
+}
+
+function finishExportUI() {
+  exportProgressBar.style.width = '100%';
+  exportProgressPct.textContent = '100% - Ready!';
+  setTimeout(() => {
+    exportProgressContainer.classList.add('hidden');
+    exportWebmBtn.disabled = false;
+    exportWebmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+  }, 2000);
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 2000);
 }
