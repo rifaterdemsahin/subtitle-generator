@@ -1,5 +1,5 @@
 /**
- * SubWebM 3-Layer Video Composer v2.3
+ * SubWebM 3-Layer Video Composer v2.4 (Anti-Ghosting & Clean Temporal Rendering Engine)
  * Layer 1: Background Image / Backdrop
  * Layer 2: Chroma Keyed Video (WebM / MP4 Green Screen Removal)
  * Layer 3: Subtitles / Captions Overlay
@@ -61,7 +61,7 @@ LAYER 3: ANIMATED SUBTITLES
 
 4
 00:00:07,500 --> 00:00:09,800
-EXPORTED AS UNIVERSAL MP4!`;
+ZERO GHOSTING OR MOTION SMEARING!`;
 
 // DOM Elements
 const compCanvas = document.getElementById('composerCanvas');
@@ -416,13 +416,19 @@ function formatTime(secs) {
 }
 
 // ============================================================================
-// --- 3-LAYER COMPOSITE RENDERING PIPELINE ---
+// --- 3-LAYER COMPOSITE RENDERING PIPELINE (ANTI-GHOSTING & CLEAN ISOLATION) ---
 // ============================================================================
 
 function renderComposerFrame(targetCtx = compCtx, targetTime = composerState.currentTime) {
   const w = composerState.style.width;
   const h = composerState.style.height;
 
+  // 1. Fully clear composite target canvas to prevent any multi-frame residue
+  targetCtx.save();
+  targetCtx.globalCompositeOperation = 'source-over';
+  targetCtx.filter = 'none';
+  targetCtx.shadowBlur = 0;
+  targetCtx.shadowColor = 'transparent';
   targetCtx.clearRect(0, 0, w, h);
 
   // -------------------------------------------------------------
@@ -440,6 +446,9 @@ function renderComposerFrame(targetCtx = compCtx, targetTime = composerState.cur
   }
   targetCtx.restore();
 
+  // Reset filter explicitly for layers 2 and 3
+  targetCtx.filter = 'none';
+
   // Dimming Tint
   if (composerState.bgDarkness > 0) {
     targetCtx.fillStyle = `rgba(0, 0, 0, ${composerState.bgDarkness})`;
@@ -447,7 +456,7 @@ function renderComposerFrame(targetCtx = compCtx, targetTime = composerState.cur
   }
 
   // -------------------------------------------------------------
-  // LAYER 2: Video with Real-Time Chroma Keying
+  // LAYER 2: Video with Real-Time Chroma Keying (Zero Ghosting)
   // -------------------------------------------------------------
   renderChromaKeyVideoLayer(targetCtx, targetTime, w, h);
 
@@ -455,11 +464,17 @@ function renderComposerFrame(targetCtx = compCtx, targetTime = composerState.cur
   // LAYER 3: Animated Subtitles Overlay (Top)
   // -------------------------------------------------------------
   renderSubtitleOverlayLayer(targetCtx, targetTime, w, h);
+
+  targetCtx.restore();
 }
 
 function renderChromaKeyVideoLayer(targetCtx, targetTime, w, h) {
   const vw = offVideoCanvas.width || 720;
   const vh = offVideoCanvas.height || 1280;
+
+  // CRITICAL FIX: Clear the offscreen buffer completely on EVERY frame
+  // Prevents motion ghosting, overlapping arm trails, and smearing!
+  offVideoCtx.clearRect(0, 0, vw, vh);
 
   // Step A: Draw raw video frame onto offscreen buffer
   if (composerState.isSampleVideo || !composerState.videoObj) {
@@ -482,7 +497,10 @@ function renderChromaKeyVideoLayer(targetCtx, targetTime, w, h) {
   const posX = (w - drawW) / 2;
   const posY = (h * (composerState.videoPosYPercent || 50) / 100) - (drawH / 2);
 
+  targetCtx.save();
+  targetCtx.filter = 'none';
   targetCtx.drawImage(offVideoCanvas, posX, posY, drawW, drawH);
+  targetCtx.restore();
 }
 
 function applyChromaKey(imageData, keyHex, threshold, softness) {
@@ -504,10 +522,11 @@ function applyChromaKey(imageData, keyHex, threshold, softness) {
       const diff = g - maxRB;
 
       if (diff > thresh) {
-        data[i + 3] = 0;
+        data[i + 3] = 0; // Pure transparent (no ghost remnants)
       } else if (diff > (thresh - soft)) {
         const edge = (diff - (thresh - soft)) / soft;
         data[i + 3] = Math.round(255 * (1 - edge));
+        // Despill green edge cleanly
         data[i + 1] = maxRB;
       }
     } else {
@@ -522,7 +541,14 @@ function applyChromaKey(imageData, keyHex, threshold, softness) {
   }
 }
 
+/**
+ * Built-in Sample Presenter generator with exact frame geometry (Zero Ghosting)
+ */
 function drawSamplePresenterFrame(ctx, t, w, h) {
+  // Clear buffer first
+  ctx.clearRect(0, 0, w, h);
+
+  // Pure #00FF00 Green Screen Background
   ctx.fillStyle = '#00FF00';
   ctx.fillRect(0, 0, w, h);
 
@@ -758,6 +784,10 @@ async function exportMergedVideo() {
   }
 
   pauseComposerPlay();
+
+  if (composerState.videoObj) {
+    composerState.videoObj.pause();
+  }
 
   const chosenFormat = (composerExportFormat ? composerExportFormat.value : 'mp4');
 
